@@ -1,0 +1,27 @@
+openapi: 3.0.3
+
+info:
+  title: Ticket Tracker API
+  version: 1.0.0
+
+paths:
+  /ping:
+    get:
+      operationId: ping
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PingResponse'
+
+components:
+  schemas:
+    PingResponse:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
