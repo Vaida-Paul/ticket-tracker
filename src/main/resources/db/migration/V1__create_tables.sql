@@ -5,7 +5,8 @@ CREATE TABLE users (
     full_name VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL,
     auth_provider VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE projects (
@@ -14,6 +15,7 @@ CREATE TABLE projects (
     description TEXT,
     created_by BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_projects_created_by FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
@@ -38,6 +40,7 @@ CREATE TABLE comments (
     author_id BIGINT NOT NULL,
     body TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_comments_ticket_id FOREIGN KEY (ticket_id) REFERENCES tickets(id),
     CONSTRAINT fk_comments_author_id FOREIGN KEY (author_id) REFERENCES users(id)
 );
