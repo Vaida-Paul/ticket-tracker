@@ -4,9 +4,7 @@ package com.example.skeleton.domain.model;
 import com.example.skeleton.domain.enums.Priority;
 import com.example.skeleton.domain.enums.TicketStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -16,7 +14,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "tickets")
-
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

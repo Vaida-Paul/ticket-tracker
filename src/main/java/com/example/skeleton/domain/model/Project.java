@@ -2,9 +2,7 @@ package com.example.skeleton.domain.model;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -14,6 +12,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "projects")
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
