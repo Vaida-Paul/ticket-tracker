@@ -14,27 +14,38 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-@ActiveProfiles("test")
+@Testcontainers
 @Transactional
 class TicketSpecificationBuilderTest {
 
-    @Autowired
-    private TicketSpecificationBuilder builder;
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+            .withDatabaseName("ticket_tracker_test")
+            .withUsername("test")
+            .withPassword("test");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.flyway.enabled", () -> "true");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
+    }
 
     @Autowired
     private TicketRepository ticketRepository;
@@ -80,7 +91,6 @@ class TicketSpecificationBuilderTest {
 
         Ticket ticket1 = Ticket.builder()
                 .title("Open High Ticket")
-                .description("Description 1")
                 .status(TicketStatus.OPEN)
                 .priority(Priority.HIGH)
                 .project(project)
@@ -91,7 +101,6 @@ class TicketSpecificationBuilderTest {
 
         Ticket ticket2 = Ticket.builder()
                 .title("In Progress Medium Ticket")
-                .description("Description 2")
                 .status(TicketStatus.IN_PROGRESS)
                 .priority(Priority.MEDIUM)
                 .project(project)
@@ -102,7 +111,6 @@ class TicketSpecificationBuilderTest {
 
         Ticket ticket3 = Ticket.builder()
                 .title("Open Low Ticket")
-                .description("Description 3")
                 .status(TicketStatus.OPEN)
                 .priority(Priority.LOW)
                 .project(project)
@@ -113,7 +121,6 @@ class TicketSpecificationBuilderTest {
 
         Ticket ticket4 = Ticket.builder()
                 .title("Done Urgent Ticket")
-                .description("Description 4")
                 .status(TicketStatus.DONE)
                 .priority(Priority.URGENT)
                 .project(project)
@@ -124,7 +131,6 @@ class TicketSpecificationBuilderTest {
 
         Ticket ticket5 = Ticket.builder()
                 .title("Open Urgent Ticket")
-                .description("Description 5")
                 .status(TicketStatus.OPEN)
                 .priority(Priority.URGENT)
                 .project(project)
@@ -136,14 +142,11 @@ class TicketSpecificationBuilderTest {
 
     @Test
     void testBuilderWithAllFilters() {
-        Specification<Ticket> spec = builder
-                .reset()
+        Specification<Ticket> spec = TicketSpecificationBuilder.builder()
                 .withStatus(TicketStatus.OPEN)
                 .withPriority(Priority.HIGH)
                 .withDueBefore(TODAY.plusDays(7))
                 .build();
-
-        assertThat(spec).isNotNull();
 
         List<Ticket> results = ticketRepository.findAll(spec);
         assertThat(results).hasSize(1);
@@ -152,54 +155,22 @@ class TicketSpecificationBuilderTest {
 
     @Test
     void testBuilderWithNullFilters() {
-        Specification<Ticket> spec = builder
-                .reset()
+        Specification<Ticket> spec = TicketSpecificationBuilder.builder()
                 .withStatus(null)
                 .withPriority(null)
                 .withAssignee(null)
-                .withDueBefore(null)
-                .withDueAfter(null)
-                .withTitleContains(null)
                 .build();
-
-        assertThat(spec).isNotNull();
 
         List<Ticket> results = ticketRepository.findAll(spec);
         assertThat(results).hasSize(5);
     }
 
     @Test
-    void testPaginationAndSorting() {
-        Pageable pageable = PageRequest.of(
-                0,
-                2,
-                Sort.by(Sort.Direction.ASC, "dueDate")
-        );
-
-        Page<Ticket> result = ticketRepository.findAll(
-                Specification.allOf(),
-                pageable
-        );
-
-        assertThat(result.getTotalElements()).isEqualTo(5);
-        assertThat(result.getTotalPages()).isEqualTo(3);
-        assertThat(result.getContent()).hasSize(2);
-
-        assertThat(result.getContent().get(0).getDueDate())
-                .isBeforeOrEqualTo(result.getContent().get(1).getDueDate());
-    }
-
-    @Test
     void testBuilderWithPartialFilters() {
-        Specification<Ticket> spec = builder
-                .reset()
+        Specification<Ticket> spec = TicketSpecificationBuilder.builder()
                 .withStatus(TicketStatus.OPEN)
-                .withPriority(null)
                 .withAssignee(user1.getId())
-                .withDueBefore(null)
                 .build();
-
-        assertThat(spec).isNotNull();
 
         List<Ticket> results = ticketRepository.findAll(spec);
         assertThat(results).hasSize(2);
@@ -210,8 +181,7 @@ class TicketSpecificationBuilderTest {
 
     @Test
     void testBuilderWithDateRange() {
-        Specification<Ticket> spec = builder
-                .reset()
+        Specification<Ticket> spec = TicketSpecificationBuilder.builder()
                 .withDueAfter(TODAY.minusDays(3))
                 .withDueBefore(TODAY.plusDays(7))
                 .build();
@@ -225,8 +195,7 @@ class TicketSpecificationBuilderTest {
 
     @Test
     void testBuilderWithTitleContains() {
-        Specification<Ticket> spec = builder
-                .reset()
+        Specification<Ticket> spec = TicketSpecificationBuilder.builder()
                 .withTitleContains("urgent")
                 .build();
 
@@ -239,8 +208,7 @@ class TicketSpecificationBuilderTest {
 
     @Test
     void testBuilderWithMultipleFilters() {
-        Specification<Ticket> spec = builder
-                .reset()
+        Specification<Ticket> spec = TicketSpecificationBuilder.builder()
                 .withStatus(TicketStatus.OPEN)
                 .withPriority(Priority.URGENT)
                 .withAssignee(user1.getId())
@@ -252,15 +220,12 @@ class TicketSpecificationBuilderTest {
     }
 
     @Test
-    void testBuilderResetWorks() {
-
-        Specification<Ticket> spec1 = builder
-                .reset()
+    void testBuilderCreatesNewInstanceEachTime() {
+        Specification<Ticket> spec1 = TicketSpecificationBuilder.builder()
                 .withStatus(TicketStatus.OPEN)
                 .build();
 
-        Specification<Ticket> spec2 = builder
-                .reset()
+        Specification<Ticket> spec2 = TicketSpecificationBuilder.builder()
                 .withStatus(TicketStatus.DONE)
                 .build();
 

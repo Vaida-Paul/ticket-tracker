@@ -9,21 +9,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
 @RequiredArgsConstructor
 @Slf4j
 public class TicketService {
 
     private final TicketRepository ticketRepository;
-    private final TicketSpecificationBuilder specificationBuilder;
 
     @Transactional(readOnly = true)
     public Page<Ticket> searchTickets(TicketSearchRequest searchRequest, Pageable pageable) {
-        Specification<Ticket> spec = specificationBuilder
-                .reset()
+        TicketSpecificationBuilder builder = new TicketSpecificationBuilder();
+
+        Specification<Ticket> spec = builder
                 .withStatus(searchRequest.getStatus())
                 .withPriority(searchRequest.getPriority())
                 .withAssignee(searchRequest.getAssigneeId())
