@@ -43,4 +43,14 @@ public class Project {
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
     @Builder.Default
     private List<Ticket> tickets = new ArrayList<>();
+
+    public void addTicket(Ticket ticket) {
+        tickets.add(ticket);
+        ticket.setProject(this);
+    }
+
+    public void removeTicket(Ticket ticket) {
+        tickets.remove(ticket);
+        ticket.setProject(null);
+    }
 }

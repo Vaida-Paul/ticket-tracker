@@ -1,27 +1,622 @@
 openapi: 3.0.3
-
 info:
   title: Ticket Tracker API
+  description: API for managing tickets, projects, users and comments
   version: 1.0.0
+  contact:
+    name: Ticket Tracker Team
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+
+tags:
+  - name: Tickets
+    description: Ticket management operations
+  - name: Projects
+    description: Project management operations
+  - name: Comments
+    description: Comment management operations
 
 paths:
-  /ping:
+  /tickets:
     get:
-      operationId: ping
+      tags:
+        - Tickets
+      summary: Get all tickets with filtering and pagination
+      operationId: getTickets
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TicketStatus'
+          description: Filter by ticket status
+        - name: priority
+          in: query
+          schema:
+            $ref: '#/components/schemas/Priority'
+          description: Filter by priority
+        - name: assigneeId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: Filter by assignee user ID
+        - name: dueBefore
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter tickets due before this date
+        - name: dueAfter
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter tickets due after this date
+        - name: titleContains
+          in: query
+          schema:
+            type: string
+          description: Search by title (case-insensitive)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Page number (0-based)
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Page size
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: createdAt,desc
+          description: 'Sort by field and direction (e.g., dueDate,asc or priority,desc)'
       responses:
         '200':
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PingResponse'
+                $ref: '#/components/schemas/PageResponseTicketDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Tickets
+      summary: Create a new ticket
+      operationId: createTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketCreateRequest'
+      responses:
+        '201':
+          description: Ticket created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tickets/{ticketId}:
+    get:
+      tags:
+        - Tickets
+      summary: Get ticket by ID
+      operationId: getTicketById
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDto'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Tickets
+      summary: Update ticket
+      operationId: updateTicket
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketUpdateRequest'
+      responses:
+        '200':
+          description: Ticket updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Tickets
+      summary: Delete ticket
+      operationId: deleteTicket
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Ticket deleted successfully
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /projects:
+    get:
+      tags:
+        - Projects
+      summary: Get all projects
+      operationId: getProjects
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectDto'
+
+    post:
+      tags:
+        - Projects
+      summary: Create a new project
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+      responses:
+        '201':
+          description: Project created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /projects/{projectId}:
+    get:
+      tags:
+        - Projects
+      summary: Get project by ID
+      operationId: getProjectById
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDto'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tickets/{ticketId}/comments:
+    get:
+      tags:
+        - Comments
+      summary: Get all comments for a ticket
+      operationId: getTicketComments
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentDto'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Comments
+      summary: Add a comment to a ticket
+      operationId: addComment
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentCreateRequest'
+      responses:
+        '201':
+          description: Comment added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
 
 components:
   schemas:
-    PingResponse:
+    TicketStatus:
+      type: string
+      enum:
+        - OPEN
+        - IN_PROGRESS
+        - DONE
+        - CANCELLED
+      description: Status of a ticket
+
+    Priority:
+      type: string
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
+        - URGENT
+      description: Priority level
+
+    Role:
+      type: string
+      enum:
+        - ADMIN
+        - PROJECT_MANAGER
+        - MEMBER
+
+    UserDto:
       type: object
       properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+        fullName:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+      required:
+        - id
+        - email
+        - fullName
+        - role
+
+    ProjectDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        createdBy:
+          $ref: '#/components/schemas/UserDto'
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - createdBy
+
+    ProjectCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        createdById:
+          type: integer
+          format: int64
+      required:
+        - name
+        - createdById
+
+    TicketDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
         status:
+          $ref: '#/components/schemas/TicketStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        project:
+          $ref: '#/components/schemas/ProjectDto'
+        assignee:
+          $ref: '#/components/schemas/UserDto'
+        dueDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - status
+        - priority
+        - project
+
+    TicketCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        projectId:
+          type: integer
+          format: int64
+        assigneeId:
+          type: integer
+          format: int64
+        dueDate:
+          type: string
+          format: date-time
+      required:
+        - title
+        - priority
+        - projectId
+
+    TicketUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        assigneeId:
+          type: integer
+          format: int64
+        dueDate:
+          type: string
+          format: date-time
+
+    CommentDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        body:
+          type: string
+        author:
+          $ref: '#/components/schemas/UserDto'
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - body
+        - author
+
+    CommentCreateRequest:
+      type: object
+      properties:
+        body:
           type: string
       required:
+        - body
+
+    PageResponseTicketDto:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketDto'
+        pageable:
+          type: object
+          properties:
+            pageNumber:
+              type: integer
+            pageSize:
+              type: integer
+            sort:
+              type: object
+              properties:
+                sorted:
+                  type: boolean
+                unsorted:
+                  type: boolean
+                empty:
+                  type: boolean
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+        sort:
+          type: object
+          properties:
+            sorted:
+              type: boolean
+            unsorted:
+              type: boolean
+            empty:
+              type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        empty:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+      required:
+        - timestamp
         - status
+        - error
+        - message

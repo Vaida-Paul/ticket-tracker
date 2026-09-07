@@ -60,4 +60,14 @@ public class Ticket {
     @OneToMany(mappedBy = "ticket", fetch = FetchType.LAZY)
     @Builder.Default
     private List<Comment> comments = new ArrayList<>();
+
+    public void addComment(Comment comment) {
+        comments.add(comment);
+        comment.setTicket(this);
+    }
+
+    public void removeComment(Comment comment) {
+        comments.remove(comment);
+        comment.setTicket(null);
+    }
 }
