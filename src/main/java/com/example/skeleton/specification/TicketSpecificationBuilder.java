@@ -14,50 +14,32 @@ public class TicketSpecificationBuilder {
     private final List<Specification<Ticket>> specifications = new ArrayList<>();
 
     public TicketSpecificationBuilder withStatus(TicketStatus status) {
-        Specification<Ticket> spec = TicketSpecifications.hasStatus(status);
-        if (spec != null) {
-            specifications.add(spec);
-        }
+        specifications.add(TicketSpecifications.hasStatus(status));
         return this;
     }
 
     public TicketSpecificationBuilder withPriority(Priority priority) {
-        Specification<Ticket> spec = TicketSpecifications.hasPriority(priority);
-        if (spec != null) {
-            specifications.add(spec);
-        }
+        specifications.add(TicketSpecifications.hasPriority(priority));
         return this;
     }
 
     public TicketSpecificationBuilder withAssignee(Long assigneeId) {
-        Specification<Ticket> spec = TicketSpecifications.hasAssignee(assigneeId);
-        if (spec != null) {
-            specifications.add(spec);
-        }
+        specifications.add(TicketSpecifications.hasAssignee(assigneeId));
         return this;
     }
 
     public TicketSpecificationBuilder withDueBefore(LocalDate date) {
-        Specification<Ticket> spec = TicketSpecifications.dueBefore(date);
-        if (spec != null) {
-            specifications.add(spec);
-        }
+        specifications.add(TicketSpecifications.dueBefore(date));
         return this;
     }
 
     public TicketSpecificationBuilder withDueAfter(LocalDate date) {
-        Specification<Ticket> spec = TicketSpecifications.dueAfter(date);
-        if (spec != null) {
-            specifications.add(spec);
-        }
+        specifications.add(TicketSpecifications.dueAfter(date));
         return this;
     }
 
     public TicketSpecificationBuilder withTitleContains(String text) {
-        Specification<Ticket> spec = TicketSpecifications.titleContains(text);
-        if (spec != null) {
-            specifications.add(spec);
-        }
+        specifications.add(TicketSpecifications.titleContains(text));
         return this;
     }
 
