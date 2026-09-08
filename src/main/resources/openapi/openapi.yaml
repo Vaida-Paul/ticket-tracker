@@ -27,11 +27,11 @@ paths:
         - name: status
           in: query
           schema:
-            $ref: '#/components/schemas/TicketStatus'
+            $ref: 'schemas.yaml#/TicketStatus'
         - name: priority
           in: query
           schema:
-            $ref: '#/components/schemas/Priority'
+            $ref: 'schemas.yaml#/Priority'
         - name: assigneeId
           in: query
           schema:
@@ -75,13 +75,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PageResponseTicketDto'
+                $ref: 'schemas.yaml#/PageResponseTicketDto'
         '400':
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: 'schemas.yaml#/ErrorResponse'
 
     post:
       tags:
@@ -93,20 +93,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TicketCreateRequest'
+              $ref: 'schemas.yaml#/TicketCreateRequest'
       responses:
         '201':
           description: Ticket created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketDto'
+                $ref: 'schemas.yaml#/TicketDto'
         '400':
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: 'schemas.yaml#/ErrorResponse'
 
   /tickets/{ticketId}:
     get:
@@ -127,13 +127,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketDto'
+                $ref: 'schemas.yaml#/TicketDto'
         '404':
           description: Ticket not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: 'schemas.yaml#/ErrorResponse'
 
     put:
       tags:
@@ -152,26 +152,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TicketUpdateRequest'
+              $ref: 'schemas.yaml#/TicketUpdateRequest'
       responses:
         '200':
           description: Ticket updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketDto'
+                $ref: 'schemas.yaml#/TicketDto'
         '400':
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: 'schemas.yaml#/ErrorResponse'
         '404':
           description: Ticket not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: 'schemas.yaml#/ErrorResponse'
 
     delete:
       tags:
@@ -193,7 +193,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: 'schemas.yaml#/ErrorResponse'
 
   /projects:
     get:
@@ -209,7 +209,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ProjectDto'
+                  $ref: 'schemas.yaml#/ProjectDto'
 
     post:
       tags:
@@ -221,20 +221,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProjectCreateRequest'
+              $ref: 'schemas.yaml#/ProjectCreateRequest'
       responses:
         '201':
           description: Project created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectDto'
+                $ref: 'schemas.yaml#/ProjectDto'
         '400':
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: 'schemas.yaml#/ErrorResponse'
 
   /projects/{projectId}:
     get:
@@ -255,13 +255,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectDto'
+                $ref: 'schemas.yaml#/ProjectDto'
         '404':
           description: Project not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: 'schemas.yaml#/ErrorResponse'
 
   /tickets/{ticketId}/comments:
     get:
@@ -284,13 +284,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CommentDto'
+                  $ref: 'schemas.yaml#/CommentDto'
         '404':
           description: Ticket not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: 'schemas.yaml#/ErrorResponse'
 
     post:
       tags:
@@ -309,233 +309,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CommentCreateRequest'
+              $ref: 'schemas.yaml#/CommentCreateRequest'
       responses:
         '201':
           description: Comment added
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CommentDto'
+                $ref: 'schemas.yaml#/CommentDto'
         '400':
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: 'schemas.yaml#/ErrorResponse'
         '404':
           description: Ticket not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-components:
-  schemas:
-    TicketStatus:
-      type: string
-      enum:
-        - OPEN
-        - IN_PROGRESS
-        - DONE
-        - CANCELLED
-
-    Priority:
-      type: string
-      enum:
-        - LOW
-        - MEDIUM
-        - HIGH
-        - URGENT
-
-    UserDto:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        email:
-          type: string
-        fullName:
-          type: string
-      required:
-        - id
-        - email
-        - fullName
-
-    ProjectDto:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        name:
-          type: string
-        description:
-          type: string
-        createdBy:
-          $ref: '#/components/schemas/UserDto'
-        createdAt:
-          type: string
-          format: date-time
-      required:
-        - id
-        - name
-        - createdBy
-
-    ProjectCreateRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        createdById:
-          type: integer
-          format: int64
-      required:
-        - name
-        - createdById
-
-    TicketDto:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        title:
-          type: string
-        description:
-          type: string
-        status:
-          $ref: '#/components/schemas/TicketStatus'
-        priority:
-          $ref: '#/components/schemas/Priority'
-        project:
-          $ref: '#/components/schemas/ProjectDto'
-        assignee:
-          $ref: '#/components/schemas/UserDto'
-        dueDate:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-      required:
-        - id
-        - title
-        - status
-        - priority
-        - project
-
-    TicketCreateRequest:
-      type: object
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-        status:
-          $ref: '#/components/schemas/TicketStatus'
-        priority:
-          $ref: '#/components/schemas/Priority'
-        projectId:
-          type: integer
-          format: int64
-        assigneeId:
-          type: integer
-          format: int64
-        dueDate:
-          type: string
-          format: date-time
-      required:
-        - title
-        - priority
-        - projectId
-
-    TicketUpdateRequest:
-      type: object
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-        status:
-          $ref: '#/components/schemas/TicketStatus'
-        priority:
-          $ref: '#/components/schemas/Priority'
-        assigneeId:
-          type: integer
-          format: int64
-        dueDate:
-          type: string
-          format: date-time
-
-    CommentDto:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        body:
-          type: string
-        author:
-          $ref: '#/components/schemas/UserDto'
-        createdAt:
-          type: string
-          format: date-time
-      required:
-        - id
-        - body
-        - author
-
-    CommentCreateRequest:
-      type: object
-      properties:
-        body:
-          type: string
-      required:
-        - body
-
-    PageResponseTicketDto:
-      type: object
-      properties:
-        content:
-          type: array
-          items:
-            $ref: '#/components/schemas/TicketDto'
-        page:
-          type: integer
-          format: int32
-        size:
-          type: integer
-          format: int32
-        totalPages:
-          type: integer
-          format: int32
-        totalElements:
-          type: integer
-          format: int64
-
-    ErrorResponse:
-      type: object
-      properties:
-        timestamp:
-          type: string
-          format: date-time
-        status:
-          type: integer
-        error:
-          type: string
-        message:
-          type: string
-        path:
-          type: string
-      required:
-        - timestamp
-        - status
-        - error
-        - message
+                $ref: 'schemas.yaml#/ErrorResponse'
