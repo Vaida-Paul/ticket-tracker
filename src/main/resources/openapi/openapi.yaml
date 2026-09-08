@@ -194,6 +194,37 @@ paths:
             application/json:
               schema:
                 $ref: 'schemas.yaml#/ErrorResponse'
+    patch:
+      tags:
+        - Tickets
+      summary: Partial update ticket
+      operationId: updateTicketPatch
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/TicketUpdateRequest'
+      responses:
+        '200':
+          description: Ticket updated
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/TicketDto'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
 
   /projects:
     get:
