@@ -210,7 +210,7 @@ paths:
       tags:
         - Tickets
       summary: Partial update ticket
-      operationId: updateTicketPatch
+      operationId: patchTicket
       parameters:
         - name: ticketId
           in: path
