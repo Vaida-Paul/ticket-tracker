@@ -239,6 +239,7 @@
 								<useSwaggerUI>false</useSwaggerUI>
 								<useBeanValidation>false</useBeanValidation>
 								<includeHttpRequestContext>false</includeHttpRequestContext>
+								<useTags>true</useTags>
 							</configOptions>
 						</configuration>
 					</execution>

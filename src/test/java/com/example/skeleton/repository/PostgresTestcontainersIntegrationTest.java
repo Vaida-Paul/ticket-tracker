@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.time.LocalDateTime;
 
@@ -30,10 +31,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PostgresTestcontainersIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
+            DockerImageName.parse("postgres:16")
+                    .asCompatibleSubstituteFor("postgres")
+    )
             .withDatabaseName("ticket_tracker_test")
             .withUsername("test")
-            .withPassword("test");
+            .withPassword("test")
+            .withReuse(false);
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -62,9 +67,9 @@ class PostgresTestcontainersIntegrationTest {
     @Test
     void testUserProjectTicketCommentChain() {
         User user = User.builder()
-                .email("integration.test@example.com")
+                .email("testcontainers@example.com")
                 .passwordHash(null)
-                .fullName("Integration Tester")
+                .fullName("Testcontainers Tester")
                 .role(Role.PROJECT_MANAGER)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
@@ -72,16 +77,16 @@ class PostgresTestcontainersIntegrationTest {
         assertThat(savedUser.getId()).isNotNull();
 
         Project project = Project.builder()
-                .name("Integration Project")
-                .description("Project for integration test")
+                .name("Testcontainers Project")
+                .description("Project for Testcontainers test")
                 .createdBy(savedUser)
                 .build();
         Project savedProject = projectRepository.save(project);
         assertThat(savedProject.getId()).isNotNull();
 
         Ticket ticket = Ticket.builder()
-                .title("Integration Ticket")
-                .description("Ticket created during integration test")
+                .title("Testcontainers Ticket")
+                .description("Ticket created during Testcontainers test")
                 .status(TicketStatus.OPEN)
                 .priority(Priority.HIGH)
                 .project(savedProject)
@@ -94,7 +99,7 @@ class PostgresTestcontainersIntegrationTest {
         Comment comment = Comment.builder()
                 .ticket(savedTicket)
                 .author(savedUser)
-                .body("This is an integration test comment.")
+                .body("This is a Testcontainers test comment.")
                 .build();
         Comment savedComment = commentRepository.save(comment);
         assertThat(savedComment.getId()).isNotNull();
@@ -107,17 +112,17 @@ class PostgresTestcontainersIntegrationTest {
         Ticket foundTicket = ticketRepository.findById(savedTicket.getId()).orElseThrow();
         Comment foundComment = commentRepository.findById(savedComment.getId()).orElseThrow();
 
-        assertThat(foundUser.getEmail()).isEqualTo("integration.test@example.com");
-        assertThat(foundUser.getFullName()).isEqualTo("Integration Tester");
+        assertThat(foundUser.getEmail()).isEqualTo("testcontainers@example.com");
+        assertThat(foundUser.getFullName()).isEqualTo("Testcontainers Tester");
 
-        assertThat(foundProject.getName()).isEqualTo("Integration Project");
+        assertThat(foundProject.getName()).isEqualTo("Testcontainers Project");
         assertThat(foundProject.getCreatedBy().getId()).isEqualTo(savedUser.getId());
 
-        assertThat(foundTicket.getTitle()).isEqualTo("Integration Ticket");
+        assertThat(foundTicket.getTitle()).isEqualTo("Testcontainers Ticket");
         assertThat(foundTicket.getProject().getId()).isEqualTo(savedProject.getId());
         assertThat(foundTicket.getAssignee().getId()).isEqualTo(savedUser.getId());
 
-        assertThat(foundComment.getBody()).isEqualTo("This is an integration test comment.");
+        assertThat(foundComment.getBody()).isEqualTo("This is a Testcontainers test comment.");
         assertThat(foundComment.getTicket().getId()).isEqualTo(savedTicket.getId());
         assertThat(foundComment.getAuthor().getId()).isEqualTo(savedUser.getId());
 
