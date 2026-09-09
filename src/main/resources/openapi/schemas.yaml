@@ -77,10 +77,12 @@ TicketDto:
       $ref: '#/TicketStatus'
     priority:
       $ref: '#/Priority'
-    project:
-      $ref: '#/ProjectDto'
-    assignee:
-      $ref: '#/UserDto'
+    projectId:
+      type: integer
+      format: int64
+    assigneeId:
+      type: integer
+      format: int64
     dueDate:
       type: string
       format: date-time
@@ -95,7 +97,7 @@ TicketDto:
     - title
     - status
     - priority
-    - project
+    - projectId
 
 TicketCreateRequest:
   type: object
@@ -106,6 +108,7 @@ TicketCreateRequest:
       type: string
     status:
       $ref: '#/TicketStatus'
+      default: OPEN
     priority:
       $ref: '#/Priority'
     projectId:
@@ -148,15 +151,20 @@ CommentDto:
       format: int64
     body:
       type: string
-    author:
-      $ref: '#/UserDto'
+    authorId:
+      type: integer
+      format: int64
+    ticketId:
+      type: integer
+      format: int64
     createdAt:
       type: string
       format: date-time
   required:
     - id
     - body
-    - author
+    - authorId
+    - ticketId
 
 CommentCreateRequest:
   type: object
@@ -185,6 +193,12 @@ PageResponseTicketDto:
     totalElements:
       type: integer
       format: int64
+  required:
+    - content
+    - page
+    - size
+    - totalPages
+    - totalElements
 
 ErrorResponse:
   type: object

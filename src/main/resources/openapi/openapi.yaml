@@ -64,11 +64,22 @@ paths:
             minimum: 1
             maximum: 100
             default: 20
-        - name: sort
+        - name: sortBy
           in: query
+          required: false
           schema:
             type: string
-            default: createdAt,desc
+            default: createdAt
+            enum: [ createdAt, dueDate, priority, title ]
+          description: 'Field to sort by. Supported values: createdAt, dueDate, priority, title'
+        - name: sortDirection
+          in: query
+          required: false
+          schema:
+            type: string
+            default: desc
+            enum: [ asc, desc ]
+          description: 'Sort direction: asc or desc'
       responses:
         '200':
           description: Successful response
@@ -195,6 +206,38 @@ paths:
               schema:
                 $ref: 'schemas.yaml#/ErrorResponse'
 
+    patch:
+      tags:
+        - Tickets
+      summary: Partial update ticket
+      operationId: updateTicketPatch
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/TicketUpdateRequest'
+      responses:
+        '200':
+          description: Ticket updated
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/TicketDto'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
   /projects:
     get:
       tags:
@@ -256,6 +299,28 @@ paths:
             application/json:
               schema:
                 $ref: 'schemas.yaml#/ProjectDto'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+    delete:
+      tags:
+        - Projects
+      summary: Delete project
+      operationId: deleteProject
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Project deleted
         '404':
           description: Project not found
           content:
@@ -325,6 +390,35 @@ paths:
                 $ref: 'schemas.yaml#/ErrorResponse'
         '404':
           description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+  /tickets/{ticketId}/comments/{commentId}:
+    delete:
+      tags:
+        - Comments
+      summary: Delete a comment
+      operationId: deleteComment
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Comment deleted
+        '404':
+          description: Comment not found
           content:
             application/json:
               schema:
