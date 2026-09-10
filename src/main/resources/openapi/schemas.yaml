@@ -199,7 +199,24 @@ PageResponseTicketDto:
     - size
     - totalPages
     - totalElements
-
+TicketSearchRequest:
+  type: object
+  properties:
+    status:
+      $ref: '#/TicketStatus'
+    priority:
+      $ref: '#/Priority'
+    assigneeId:
+      type: integer
+      format: int64
+    dueBefore:
+      type: string
+      format: date
+    dueAfter:
+      type: string
+      format: date
+    titleContains:
+      type: string
 ErrorResponse:
   type: object
   properties:

@@ -1,9 +1,10 @@
 package com.example.skeleton.repository;
 
 import com.example.skeleton.domain.enums.AuthProvider;
-import com.example.skeleton.domain.enums.Priority;
+import org.openapitools.model.TicketStatus;
+import org.openapitools.model.Priority;
 import com.example.skeleton.domain.enums.Role;
-import com.example.skeleton.domain.enums.TicketStatus;
+import org.openapitools.model.TicketSearchRequest;
 import com.example.skeleton.domain.model.Comment;
 import com.example.skeleton.domain.model.Project;
 import com.example.skeleton.domain.model.Ticket;
@@ -22,6 +23,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -87,11 +89,11 @@ class PostgresTestcontainersIntegrationTest {
         Ticket ticket = Ticket.builder()
                 .title("Testcontainers Ticket")
                 .description("Ticket created during Testcontainers test")
-                .status(TicketStatus.OPEN)
-                .priority(Priority.HIGH)
+                .status(com.example.skeleton.domain.enums.TicketStatus.OPEN)
+                .priority(com.example.skeleton.domain.enums.Priority.HIGH)
                 .project(savedProject)
                 .assignee(savedUser)
-                .dueDate(LocalDateTime.now().plusDays(7))
+                .dueDate(OffsetDateTime.now().plusDays(7))
                 .build();
         Ticket savedTicket = ticketRepository.save(ticket);
         assertThat(savedTicket.getId()).isNotNull();

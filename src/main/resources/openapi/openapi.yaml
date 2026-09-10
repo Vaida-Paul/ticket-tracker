@@ -423,3 +423,31 @@ paths:
             application/json:
               schema:
                 $ref: 'schemas.yaml#/ErrorResponse'
+components:
+  schemas:
+    TicketSearchRequest:
+      $ref: 'schemas.yaml#/TicketSearchRequest'
+    TicketStatus:
+      $ref: 'schemas.yaml#/TicketStatus'
+    Priority:
+      $ref: 'schemas.yaml#/Priority'
+    UserDto:
+      $ref: 'schemas.yaml#/UserDto'
+    ProjectDto:
+      $ref: 'schemas.yaml#/ProjectDto'
+    ProjectCreateRequest:
+      $ref: 'schemas.yaml#/ProjectCreateRequest'
+    TicketDto:
+      $ref: 'schemas.yaml#/TicketDto'
+    TicketCreateRequest:
+      $ref: 'schemas.yaml#/TicketCreateRequest'
+    TicketUpdateRequest:
+      $ref: 'schemas.yaml#/TicketUpdateRequest'
+    CommentDto:
+      $ref: 'schemas.yaml#/CommentDto'
+    CommentCreateRequest:
+      $ref: 'schemas.yaml#/CommentCreateRequest'
+    PageResponseTicketDto:
+      $ref: 'schemas.yaml#/PageResponseTicketDto'
+    ErrorResponse:
+      $ref: 'schemas.yaml#/ErrorResponse'

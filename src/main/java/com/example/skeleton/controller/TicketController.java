@@ -1,6 +1,5 @@
 package com.example.skeleton.controller;
 
-import com.example.skeleton.domain.dto.TicketSearchRequest;
 import com.example.skeleton.domain.model.Ticket;
 import com.example.skeleton.mapper.TicketMapper;
 import com.example.skeleton.service.TicketService;
@@ -37,10 +36,14 @@ public class TicketController implements TicketsApi {
             String titleContains,
             Integer page,
             Integer size,
-            String sort
+            String sortBy,
+            String sortDirection
     ) {
-        String[] sortParams = sort != null ? sort.split(",") : new String[]{"createdAt", "desc"};
-        Sort sortObj = Sort.by(Sort.Direction.fromString(sortParams[1]), sortParams[0]);
+        String sortField = sortBy != null && !sortBy.isEmpty() ? sortBy : "createdAt";
+        Sort.Direction direction = Sort.Direction.fromString(
+                sortDirection != null && !sortDirection.isEmpty() ? sortDirection : "desc"
+        );
+        Sort sortObj = Sort.by(direction, sortField);
 
         Pageable pageable = PageRequest.of(
                 page != null ? page : 0,
@@ -48,14 +51,13 @@ public class TicketController implements TicketsApi {
                 sortObj
         );
 
-        TicketSearchRequest searchRequest = TicketSearchRequest.builder()
-                .status(convertTicketStatus(status))
-                .priority(convertPriority(priority))
-                .assigneeId(assigneeId)
-                .dueBefore(dueBefore)
-                .dueAfter(dueAfter)
-                .titleContains(titleContains)
-                .build();
+        TicketSearchRequest searchRequest = new TicketSearchRequest();
+        searchRequest.setStatus(status);
+        searchRequest.setPriority(priority);
+        searchRequest.setAssigneeId(assigneeId);
+        searchRequest.setDueBefore(dueBefore);
+        searchRequest.setDueAfter(dueAfter);
+        searchRequest.setTitleContains(titleContains);
 
         Page<Ticket> ticketPage = ticketService.searchTickets(searchRequest, pageable);
 
@@ -70,6 +72,7 @@ public class TicketController implements TicketsApi {
 
         return ResponseEntity.ok(response);
     }
+
 
     @Override
     public ResponseEntity<TicketDto> getTicketById(Long ticketId) {
@@ -90,7 +93,7 @@ public class TicketController implements TicketsApi {
     }
 
     @Override
-    public ResponseEntity<TicketDto> updateTicketPatch(Long ticketId, TicketUpdateRequest request) {
+    public ResponseEntity<TicketDto> patchTicket(Long ticketId, TicketUpdateRequest request) {
         Ticket ticket = ticketService.partialUpdateTicket(ticketId, request);
         return ResponseEntity.ok(ticketMapper.toDto(ticket));
     }
@@ -99,29 +102,5 @@ public class TicketController implements TicketsApi {
     public ResponseEntity<Void> deleteTicket(Long ticketId) {
         ticketService.deleteTicket(ticketId);
         return ResponseEntity.noContent().build();
-    }
-
-    private com.example.skeleton.domain.enums.TicketStatus convertTicketStatus(org.openapitools.model.TicketStatus status) {
-        if (status == null) {
-            return null;
-        }
-        return switch (status) {
-            case OPEN -> com.example.skeleton.domain.enums.TicketStatus.OPEN;
-            case IN_PROGRESS -> com.example.skeleton.domain.enums.TicketStatus.IN_PROGRESS;
-            case DONE -> com.example.skeleton.domain.enums.TicketStatus.DONE;
-            case CANCELLED -> com.example.skeleton.domain.enums.TicketStatus.CANCELLED;
-        };
-    }
-
-    private com.example.skeleton.domain.enums.Priority convertPriority(org.openapitools.model.Priority priority) {
-        if (priority == null) {
-            return null;
-        }
-        return switch (priority) {
-            case LOW -> com.example.skeleton.domain.enums.Priority.LOW;
-            case MEDIUM -> com.example.skeleton.domain.enums.Priority.MEDIUM;
-            case HIGH -> com.example.skeleton.domain.enums.Priority.HIGH;
-            case URGENT -> com.example.skeleton.domain.enums.Priority.URGENT;
-        };
     }
 }
