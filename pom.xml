@@ -142,6 +142,11 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>test</scope>
@@ -238,6 +243,7 @@
 								<useSpringBoot3>true</useSpringBoot3>
 								<useSwaggerUI>false</useSwaggerUI>
 								<useBeanValidation>false</useBeanValidation>
+								<useValidAnnotation>false</useValidAnnotation>
 								<includeHttpRequestContext>false</includeHttpRequestContext>
 								<useTags>true</useTags>
 							</configOptions>

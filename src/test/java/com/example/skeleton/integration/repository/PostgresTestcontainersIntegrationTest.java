@@ -1,6 +1,10 @@
-package com.example.skeleton.repository;
+package com.example.skeleton.integration.repository;
 
 import com.example.skeleton.domain.enums.AuthProvider;
+import com.example.skeleton.repository.CommentRepository;
+import com.example.skeleton.repository.ProjectRepository;
+import com.example.skeleton.repository.TicketRepository;
+import com.example.skeleton.repository.UserRepository;
 import org.openapitools.model.TicketStatus;
 import org.openapitools.model.Priority;
 import com.example.skeleton.domain.enums.Role;

@@ -3,6 +3,7 @@ package com.example.skeleton.controller;
 import com.example.skeleton.domain.model.Ticket;
 import com.example.skeleton.mapper.TicketMapper;
 import com.example.skeleton.service.TicketService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.api.TicketsApi;
@@ -39,7 +40,7 @@ public class TicketController implements TicketsApi {
             String sortBy,
             String sortDirection
     ) {
-        String sortField = sortBy != null && !sortBy.isEmpty() ? sortBy : "createdAt";
+        String sortField = sortBy != null && !sortBy.isEmpty() ? sortBy : "priority";
         Sort.Direction direction = Sort.Direction.fromString(
                 sortDirection != null && !sortDirection.isEmpty() ? sortDirection : "desc"
         );
@@ -81,13 +82,13 @@ public class TicketController implements TicketsApi {
     }
 
     @Override
-    public ResponseEntity<TicketDto> createTicket(TicketCreateRequest request) {
+    public ResponseEntity<TicketDto> createTicket(@Valid TicketCreateRequest request) {
         Ticket ticket = ticketService.createTicket(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ticketMapper.toDto(ticket));
     }
 
     @Override
-    public ResponseEntity<TicketDto> updateTicket(Long ticketId, TicketUpdateRequest request) {
+    public ResponseEntity<TicketDto> updateTicket(Long ticketId,@Valid TicketUpdateRequest request) {
         Ticket ticket = ticketService.updateTicket(ticketId, request);
         return ResponseEntity.ok(ticketMapper.toDto(ticket));
     }

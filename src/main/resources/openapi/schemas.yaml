@@ -54,11 +54,14 @@ ProjectCreateRequest:
   properties:
     name:
       type: string
+      x-field-extra-annotation: '@jakarta.validation.constraints.NotBlank(message = "must not be blank") @jakarta.validation.constraints.Size(min = 1, max = 255, message = "size must be between 1 and 255")'
     description:
       type: string
+      x-field-extra-annotation: '@jakarta.validation.constraints.Size(max = 2000, message = "size must be at most 2000")'
     createdById:
       type: integer
       format: int64
+      x-field-extra-annotation: '@jakarta.validation.constraints.NotNull(message = "must not be null") @jakarta.validation.constraints.Min(value = 1, message = "must be greater than or equal to 1")'
   required:
     - name
     - createdById
@@ -104,8 +107,10 @@ TicketCreateRequest:
   properties:
     title:
       type: string
+      x-field-extra-annotation: '@jakarta.validation.constraints.NotBlank(message = "must not be blank") @jakarta.validation.constraints.Size(min = 1, max = 255, message = "size must be between 1 and 255")'
     description:
       type: string
+      x-field-extra-annotation: '@jakarta.validation.constraints.Size(max = 2000, message = "size must be at most 2000")'
     status:
       $ref: '#/TicketStatus'
       default: OPEN
@@ -114,6 +119,7 @@ TicketCreateRequest:
     projectId:
       type: integer
       format: int64
+      x-field-extra-annotation: '@jakarta.validation.constraints.NotNull(message = "must not be null") @jakarta.validation.constraints.Min(value = 1, message = "must be greater than or equal to 1")'
     assigneeId:
       type: integer
       format: int64
@@ -171,6 +177,7 @@ CommentCreateRequest:
   properties:
     body:
       type: string
+      x-field-extra-annotation: '@jakarta.validation.constraints.NotBlank(message = "must not be blank") @jakarta.validation.constraints.Size(min = 1, max = 1000, message = "size must be between 1 and 1000")'
   required:
     - body
 
@@ -217,6 +224,7 @@ TicketSearchRequest:
       format: date
     titleContains:
       type: string
+
 ErrorResponse:
   type: object
   properties:
@@ -236,3 +244,29 @@ ErrorResponse:
     - status
     - error
     - message
+
+PageResponseProjectDto:
+  type: object
+  properties:
+    content:
+      type: array
+      items:
+        $ref: '#/ProjectDto'
+    page:
+      type: integer
+      format: int32
+    size:
+      type: integer
+      format: int32
+    totalPages:
+      type: integer
+      format: int32
+    totalElements:
+      type: integer
+      format: int64
+  required:
+    - content
+    - page
+    - size
+    - totalPages
+    - totalElements
