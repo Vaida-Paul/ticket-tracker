@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.openapitools.model.ProjectCreateRequest;
+import org.openapitools.model.ProjectDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,6 +45,7 @@ class ProjectServiceTest {
 
     private User user;
     private Project project;
+    private ProjectDto projectDto;
 
     @BeforeEach
     void setUp() {
@@ -58,54 +61,89 @@ class ProjectServiceTest {
                 .createdBy(user)
                 .build();
         project.setId(1L);
+
+        projectDto = new ProjectDto();
+        projectDto.setId(1L);
+        projectDto.setName("Test Project");
+        projectDto.setDescription("Description");
     }
 
     @Test
-    void whenGetAllProjects_thenReturnsPage() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Project> expectedPage = new PageImpl<>(List.of(project));
-        when(projectRepository.findAll(pageable)).thenReturn(expectedPage);
+    void whenGetAllProjects_thenReturnsPageOfDtos() {
+        Page<Project> projectPage = new PageImpl<>(
+                List.of(project),
+                PageRequest.of(0, 10),
+                1
+        );
 
-        Page<Project> result = projectService.getAllProjects(pageable);
+        when(projectRepository.findAll(any(Pageable.class))).thenReturn(projectPage);
+        when(projectMapper.toDto(project)).thenReturn(projectDto);
+
+        Page<ProjectDto> result = projectService.getAllProjects(0, 10, "createdAt", "desc");
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getName()).isEqualTo("Test Project");
+        assertThat(result.getTotalElements()).isEqualTo(1);
 
-        verify(projectRepository).findAll(pageable);
-        verifyNoMoreInteractions(projectRepository);
-        verifyNoInteractions(userRepository, projectMapper);
+        verify(projectRepository).findAll(any(Pageable.class));
+        verify(projectMapper).toDto(project);
+
+        verifyNoMoreInteractions(projectRepository, projectMapper);
+        verifyNoInteractions(userRepository);
     }
 
     @Test
     void whenGetAllProjectsEmpty_thenReturnsEmptyPage() {
-        Pageable pageable = PageRequest.of(0, 10);
         Page<Project> emptyPage = new PageImpl<>(List.of());
-        when(projectRepository.findAll(pageable)).thenReturn(emptyPage);
 
-        Page<Project> result = projectService.getAllProjects(pageable);
+        when(projectRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
+
+        Page<ProjectDto> result = projectService.getAllProjects(0, 10, "createdAt", "desc");
 
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
 
-        verify(projectRepository).findAll(pageable);
+        verify(projectRepository).findAll(any(Pageable.class));
         verifyNoMoreInteractions(projectRepository);
         verifyNoInteractions(userRepository, projectMapper);
     }
 
     @Test
-    void whenProjectExists_thenReturnsProject() {
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+    void whenGetAllProjectsWithDefaultParams_thenUsesDefaults() {
+        Page<Project> projectPage = new PageImpl<>(List.of(project));
 
-        Project result = projectService.getProjectById(1L);
+        when(projectRepository.findAll(any(Pageable.class))).thenReturn(projectPage);
+        when(projectMapper.toDto(project)).thenReturn(projectDto);
+
+        Page<ProjectDto> result = projectService.getAllProjects(null, null, null, null);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(1);
+
+        verify(projectRepository).findAll(any(Pageable.class));
+        verify(projectMapper).toDto(project);
+
+        verifyNoMoreInteractions(projectRepository, projectMapper);
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void whenProjectExists_thenReturnsProjectDto() {
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectMapper.toDto(project)).thenReturn(projectDto);
+
+        ProjectDto result = projectService.getProjectById(1L);
 
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo("Test Project");
 
         verify(projectRepository).findById(1L);
-        verifyNoMoreInteractions(projectRepository);
-        verifyNoInteractions(userRepository, projectMapper);
+        verify(projectMapper).toDto(project);
+
+        verifyNoMoreInteractions(projectRepository, projectMapper);
+        verifyNoInteractions(userRepository);
     }
 
     @Test
@@ -117,12 +155,13 @@ class ProjectServiceTest {
                 .hasMessageContaining("99999");
 
         verify(projectRepository).findById(99999L);
+
         verifyNoMoreInteractions(projectRepository);
         verifyNoInteractions(userRepository, projectMapper);
     }
 
     @Test
-    void whenCreateProjectWithValidData_thenReturnsSavedProject() {
+    void whenCreateProjectWithValidData_thenReturnsProjectDto() {
         ProjectCreateRequest request = new ProjectCreateRequest();
         request.setName("New Project");
         request.setCreatedById(1L);
@@ -130,15 +169,18 @@ class ProjectServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(projectMapper.toEntity(request)).thenReturn(project);
         when(projectRepository.save(project)).thenReturn(project);
+        when(projectMapper.toDto(project)).thenReturn(projectDto);
 
-        Project result = projectService.createProject(request);
+        ProjectDto result = projectService.createProject(request);
 
         assertThat(result).isNotNull();
-        assertThat(result.getCreatedBy()).isEqualTo(user);
+        assertThat(result.getName()).isEqualTo("Test Project");
+        assertThat(project.getCreatedBy()).isEqualTo(user);
 
         verify(userRepository).findById(1L);
         verify(projectMapper).toEntity(request);
         verify(projectRepository).save(project);
+        verify(projectMapper).toDto(project);
 
         verifyNoMoreInteractions(userRepository, projectMapper, projectRepository);
     }
@@ -156,6 +198,7 @@ class ProjectServiceTest {
                 .hasMessageContaining("99999");
 
         verify(userRepository).findById(99999L);
+
         verifyNoMoreInteractions(userRepository);
         verifyNoInteractions(projectMapper, projectRepository);
     }
@@ -183,6 +226,7 @@ class ProjectServiceTest {
                 .hasMessageContaining("99999");
 
         verify(projectRepository).findById(99999L);
+
         verifyNoMoreInteractions(projectRepository);
         verifyNoInteractions(userRepository, projectMapper);
     }

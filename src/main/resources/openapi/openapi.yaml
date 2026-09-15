@@ -149,7 +149,7 @@ paths:
     put:
       tags:
         - Tickets
-      summary: Update ticket
+      summary: Full update ticket (PUT)
       operationId: updateTicket
       parameters:
         - name: ticketId
@@ -163,7 +163,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: 'schemas.yaml#/TicketUpdateRequest'
+              $ref: 'schemas.yaml#/TicketPutRequest'
       responses:
         '200':
           description: Ticket updated
@@ -183,7 +183,6 @@ paths:
             application/json:
               schema:
                 $ref: 'schemas.yaml#/ErrorResponse'
-
     delete:
       tags:
         - Tickets
@@ -483,3 +482,5 @@ components:
       $ref: 'schemas.yaml#/ErrorResponse'
     PageResponseProjectDto:
       $ref: 'schemas.yaml#/PageResponseProjectDto'
+    TicketPutRequest:
+      $ref: 'schemas.yaml#/TicketPutRequest'

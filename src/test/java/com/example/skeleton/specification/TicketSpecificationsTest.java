@@ -12,14 +12,11 @@ import com.example.skeleton.service.TicketService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openapitools.model.Priority;
-import org.openapitools.model.TicketSearchRequest;
+import org.openapitools.model.TicketDto;
 import org.openapitools.model.TicketStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
@@ -156,81 +153,73 @@ class TicketSpecificationsTest {
 
     @Test
     void filterByStatusOnly() {
-        TicketSearchRequest request = new TicketSearchRequest();
-        request.setStatus(TicketStatus.OPEN);
-
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Ticket> result = ticketService.searchTickets(request, pageable);
+        Page<TicketDto> result = ticketService.searchTickets(
+                TicketStatus.OPEN, null, null, null, null, null,
+                0, 10, "createdAt", "desc"
+        );
 
         assertThat(result.getContent()).hasSize(3);
-        assertThat(result.getContent()).allMatch(t -> t.getStatus() == com.example.skeleton.domain.enums.TicketStatus.OPEN);
+        assertThat(result.getContent()).allMatch(t -> t.getStatus() == TicketStatus.OPEN);
     }
 
     @Test
     void filterByStatusAndPriority() {
-        TicketSearchRequest request = new TicketSearchRequest();
-        request.setStatus(TicketStatus.OPEN);
-        request.setPriority(Priority.HIGH);
-
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Ticket> result = ticketService.searchTickets(request, pageable);
+        Page<TicketDto> result = ticketService.searchTickets(
+                TicketStatus.OPEN, Priority.HIGH, null, null, null, null,
+                0, 10, "createdAt", "desc"
+        );
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getTitle()).isEqualTo("Open High Ticket");
-        assertThat(result.getContent().get(0).getStatus()).isEqualTo(com.example.skeleton.domain.enums.TicketStatus.OPEN);
-        assertThat(result.getContent().get(0).getPriority()).isEqualTo(com.example.skeleton.domain.enums.Priority.HIGH);
+        assertThat(result.getContent().get(0).getStatus()).isEqualTo(TicketStatus.OPEN);
+        assertThat(result.getContent().get(0).getPriority()).isEqualTo(Priority.HIGH);
     }
 
     @Test
     void filterWithNoParamsReturnsEverything() {
-        TicketSearchRequest request = new TicketSearchRequest();
-
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Ticket> result = ticketService.searchTickets(request, pageable);
+        Page<TicketDto> result = ticketService.searchTickets(
+                null, null, null, null, null, null,
+                0, 10, "createdAt", "desc"
+        );
 
         assertThat(result.getContent()).hasSize(5);
     }
 
     @Test
     void filterByDueBeforeAndDueAfter() {
-        TicketSearchRequest request = new TicketSearchRequest();
-        request.setDueAfter(TODAY.minusDays(3));
-        request.setDueBefore(TODAY.plusDays(7));
-
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Ticket> result = ticketService.searchTickets(request, pageable);
+        Page<TicketDto> result = ticketService.searchTickets(
+                null, null, null, TODAY.plusDays(7),
+                TODAY.minusDays(3), null,
+                0, 10, "createdAt", "desc"
+        );
 
         assertThat(result.getContent()).hasSize(3);
         assertThat(result.getContent())
-                .extracting(Ticket::getTitle)
+                .extracting(TicketDto::getTitle)
                 .containsExactlyInAnyOrder("Open High Ticket", "Done Urgent Ticket", "Open Urgent Ticket");
     }
 
     @Test
     void filterWithMultipleCriteria() {
-        TicketSearchRequest request = new TicketSearchRequest();
-        request.setStatus(TicketStatus.OPEN);
-        request.setAssigneeId(user1.getId());
-        request.setPriority(Priority.URGENT);
-
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Ticket> result = ticketService.searchTickets(request, pageable);
+        Page<TicketDto> result = ticketService.searchTickets(
+                TicketStatus.OPEN, Priority.URGENT, user1.getId(), null, null, null,
+                0, 10, "createdAt", "desc"
+        );
 
         assertThat(result.getContent()).hasSize(1);
-        Ticket ticket = result.getContent().get(0);
-        assertThat(ticket.getStatus()).isEqualTo(com.example.skeleton.domain.enums.TicketStatus.OPEN);
-        assertThat(ticket.getAssignee().getId()).isEqualTo(user1.getId());
-        assertThat(ticket.getPriority()).isEqualTo(com.example.skeleton.domain.enums.Priority.URGENT);
+        TicketDto ticket = result.getContent().get(0);
+        assertThat(ticket.getStatus()).isEqualTo(TicketStatus.OPEN);
+        assertThat(ticket.getAssigneeId()).isEqualTo(user1.getId());
+        assertThat(ticket.getPriority()).isEqualTo(Priority.URGENT);
         assertThat(ticket.getTitle()).isEqualTo("Open Urgent Ticket");
     }
 
     @Test
     void filterWithPaginationAndSorting() {
-        TicketSearchRequest request = new TicketSearchRequest();
-        request.setStatus(TicketStatus.OPEN);
-
-        Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Ticket> result = ticketService.searchTickets(request, pageable);
+        Page<TicketDto> result = ticketService.searchTickets(
+                TicketStatus.OPEN, null, null, null, null, null,
+                0, 2, "createdAt", "desc"
+        );
 
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(3);
@@ -239,15 +228,14 @@ class TicketSpecificationsTest {
 
     @Test
     void testTitleContains() {
-        TicketSearchRequest request = new TicketSearchRequest();
-        request.setTitleContains("urgent");
-
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Ticket> result = ticketService.searchTickets(request, pageable);
+        Page<TicketDto> result = ticketService.searchTickets(
+                null, null, null, null, null, "urgent",
+                0, 10, "createdAt", "desc"
+        );
 
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent())
-                .extracting(Ticket::getTitle)
+                .extracting(TicketDto::getTitle)
                 .allMatch(title -> title.toLowerCase().contains("urgent"));
     }
 }

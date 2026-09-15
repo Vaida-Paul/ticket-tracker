@@ -1,7 +1,5 @@
 package com.example.skeleton.controller;
 
-import com.example.skeleton.domain.model.Ticket;
-import com.example.skeleton.mapper.TicketMapper;
 import com.example.skeleton.service.TicketService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -9,9 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.openapitools.api.TicketsApi;
 import org.openapitools.model.*;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,8 +19,8 @@ import java.time.LocalDate;
 @Slf4j
 @RequestMapping("/api/v1")
 public class TicketController implements TicketsApi {
+
     private final TicketService ticketService;
-    private final TicketMapper ticketMapper;
 
     @Override
     public ResponseEntity<PageResponseTicketDto> getTickets(
@@ -40,32 +35,13 @@ public class TicketController implements TicketsApi {
             String sortBy,
             String sortDirection
     ) {
-        String sortField = sortBy != null && !sortBy.isEmpty() ? sortBy : "priority";
-        Sort.Direction direction = Sort.Direction.fromString(
-                sortDirection != null && !sortDirection.isEmpty() ? sortDirection : "desc"
+        Page<TicketDto> ticketPage = ticketService.searchTickets(
+                status, priority, assigneeId, dueBefore, dueAfter,
+                titleContains, page, size, sortBy, sortDirection
         );
-        Sort sortObj = Sort.by(direction, sortField);
-
-        Pageable pageable = PageRequest.of(
-                page != null ? page : 0,
-                size != null ? size : 20,
-                sortObj
-        );
-
-        TicketSearchRequest searchRequest = new TicketSearchRequest();
-        searchRequest.setStatus(status);
-        searchRequest.setPriority(priority);
-        searchRequest.setAssigneeId(assigneeId);
-        searchRequest.setDueBefore(dueBefore);
-        searchRequest.setDueAfter(dueAfter);
-        searchRequest.setTitleContains(titleContains);
-
-        Page<Ticket> ticketPage = ticketService.searchTickets(searchRequest, pageable);
 
         PageResponseTicketDto response = new PageResponseTicketDto();
-        response.setContent(ticketPage.getContent().stream()
-                .map(ticketMapper::toDto)
-                .toList());
+        response.setContent(ticketPage.getContent());
         response.setTotalElements(ticketPage.getTotalElements());
         response.setTotalPages(ticketPage.getTotalPages());
         response.setSize(ticketPage.getSize());
@@ -74,29 +50,25 @@ public class TicketController implements TicketsApi {
         return ResponseEntity.ok(response);
     }
 
-
     @Override
     public ResponseEntity<TicketDto> getTicketById(Long ticketId) {
-        Ticket ticket = ticketService.getTicketById(ticketId);
-        return ResponseEntity.ok(ticketMapper.toDto(ticket));
+        return ResponseEntity.ok(ticketService.getTicketById(ticketId));
     }
 
     @Override
     public ResponseEntity<TicketDto> createTicket(@Valid TicketCreateRequest request) {
-        Ticket ticket = ticketService.createTicket(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ticketMapper.toDto(ticket));
+        TicketDto ticket = ticketService.createTicket(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ticket);
     }
 
     @Override
-    public ResponseEntity<TicketDto> updateTicket(Long ticketId,@Valid TicketUpdateRequest request) {
-        Ticket ticket = ticketService.updateTicket(ticketId, request);
-        return ResponseEntity.ok(ticketMapper.toDto(ticket));
+    public ResponseEntity<TicketDto> updateTicket(Long ticketId, @Valid TicketPutRequest request) {
+        return ResponseEntity.ok(ticketService.updateTicket(ticketId, request));
     }
 
     @Override
-    public ResponseEntity<TicketDto> patchTicket(Long ticketId, TicketUpdateRequest request) {
-        Ticket ticket = ticketService.partialUpdateTicket(ticketId, request);
-        return ResponseEntity.ok(ticketMapper.toDto(ticket));
+    public ResponseEntity<TicketDto> patchTicket(Long ticketId, @Valid TicketUpdateRequest request) {
+        return ResponseEntity.ok(ticketService.partialUpdateTicket(ticketId, request));
     }
 
     @Override

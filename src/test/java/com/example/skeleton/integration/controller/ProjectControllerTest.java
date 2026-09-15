@@ -2,7 +2,6 @@ package com.example.skeleton.integration.controller;
 
 import com.example.skeleton.exception.ProjectNotFoundException;
 import com.example.skeleton.exception.UserNotFoundException;
-import com.example.skeleton.mapper.ProjectMapper;
 import com.example.skeleton.service.ProjectService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,9 +38,6 @@ class ProjectControllerTest {
     @MockitoBean
     private ProjectService projectService;
 
-    @MockitoBean
-    private ProjectMapper projectMapper;
-
     @Test
     void whenGetProjects_thenReturns200AndPage() throws Exception {
         ProjectDto dto = new ProjectDto();
@@ -49,19 +45,15 @@ class ProjectControllerTest {
         dto.setName("Test Project");
         dto.setDescription("Test Description");
 
-        com.example.skeleton.domain.model.Project mockEntity = new com.example.skeleton.domain.model.Project();
-        org.springframework.data.domain.Page<com.example.skeleton.domain.model.Project> mockPage =
-                new org.springframework.data.domain.PageImpl<>(List.of(mockEntity));
+        org.springframework.data.domain.Page<ProjectDto> mockPage =
+                new org.springframework.data.domain.PageImpl<>(List.of(dto));
 
-        when(projectService.getAllProjects(any())).thenReturn(mockPage);
-        when(projectMapper.toDto(mockEntity)).thenReturn(dto);
+        when(projectService.getAllProjects(any(), any(), any(), any())).thenReturn(mockPage);
 
-        mockMvc.perform(
-                        get("/api/v1/projects")
-                                .param("page", "0")
-                                .param("size", "10")
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/projects")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].name").value("Test Project"))
@@ -69,48 +61,45 @@ class ProjectControllerTest {
                 .andExpect(jsonPath("$.page").value(0))
                 .andExpect(jsonPath("$.size").value(1));
 
-        verify(projectService).getAllProjects(any());
+        verify(projectService).getAllProjects(any(), any(), any(), any());
+        verifyNoMoreInteractions(projectService);
     }
 
     @Test
     void whenNoProjects_thenReturns200AndEmptyPage() throws Exception {
-
-        org.springframework.data.domain.Page<com.example.skeleton.domain.model.Project> emptyPage =
+        org.springframework.data.domain.Page<ProjectDto> emptyPage =
                 new org.springframework.data.domain.PageImpl<>(List.of());
 
-        when(projectService.getAllProjects(any())).thenReturn(emptyPage);
+        when(projectService.getAllProjects(any(), any(), any(), any())).thenReturn(emptyPage);
 
-
-        mockMvc.perform(
-                        get("/api/v1/projects")
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/projects")
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content.length()").value(0))
                 .andExpect(jsonPath("$.totalElements").value(0));
 
-        verify(projectService).getAllProjects(any());
+        verify(projectService).getAllProjects(any(), any(), any(), any());
+        verifyNoMoreInteractions(projectService);
     }
 
     @Test
     void whenGetProjectsWithSorting_thenReturns200() throws Exception {
-        org.springframework.data.domain.Page<com.example.skeleton.domain.model.Project> emptyPage =
+        org.springframework.data.domain.Page<ProjectDto> emptyPage =
                 new org.springframework.data.domain.PageImpl<>(List.of());
 
-        when(projectService.getAllProjects(any())).thenReturn(emptyPage);
+        when(projectService.getAllProjects(any(), any(), any(), any())).thenReturn(emptyPage);
 
-        mockMvc.perform(
-                        get("/api/v1/projects")
-                                .param("page", "0")
-                                .param("size", "10")
-                                .param("sortBy", "name")
-                                .param("sortDirection", "asc")
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/projects")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sortBy", "name")
+                        .param("sortDirection", "asc")
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        verify(projectService).getAllProjects(any());
+        verify(projectService).getAllProjects(any(), any(), any(), any());
+        verifyNoMoreInteractions(projectService);
     }
 
     @Test
@@ -121,15 +110,10 @@ class ProjectControllerTest {
         response.setName("Test Project");
         response.setDescription("Test Description");
 
-        com.example.skeleton.domain.model.Project mockEntity = new com.example.skeleton.domain.model.Project();
+        when(projectService.getProjectById(projectId)).thenReturn(response);
 
-        when(projectService.getProjectById(projectId)).thenReturn(mockEntity);
-        when(projectMapper.toDto(mockEntity)).thenReturn(response);
-
-        mockMvc.perform(
-                        get("/api/v1/projects/{id}", projectId)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/projects/{id}", projectId)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1))
@@ -137,7 +121,7 @@ class ProjectControllerTest {
                 .andExpect(jsonPath("$.description").value("Test Description"));
 
         verify(projectService).getProjectById(projectId);
-        verify(projectMapper).toDto(mockEntity);
+        verifyNoMoreInteractions(projectService);
     }
 
     @Test
@@ -146,10 +130,8 @@ class ProjectControllerTest {
         when(projectService.getProjectById(projectId))
                 .thenThrow(new ProjectNotFoundException(projectId));
 
-        mockMvc.perform(
-                        get("/api/v1/projects/{id}", projectId)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/projects/{id}", projectId)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.error").value("Not Found"))
@@ -157,6 +139,7 @@ class ProjectControllerTest {
                 .andExpect(jsonPath("$.path").value("/api/v1/projects/99999"));
 
         verify(projectService).getProjectById(projectId);
+        verifyNoMoreInteractions(projectService);
     }
 
     @Test
@@ -174,24 +157,20 @@ class ProjectControllerTest {
         expectedResponse.setName("New Project");
         expectedResponse.setDescription("New Description");
 
-        com.example.skeleton.domain.model.Project mockEntity = new com.example.skeleton.domain.model.Project();
+        when(projectService.createProject(any(ProjectCreateRequest.class)))
+                .thenReturn(expectedResponse);
 
-        when(projectService.createProject(any(ProjectCreateRequest.class))).thenReturn(mockEntity);
-        when(projectMapper.toDto(mockEntity)).thenReturn(expectedResponse);
-
-        mockMvc.perform(
-                        post("/api/v1/projects")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(post("/api/v1/projects")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("New Project"))
                 .andExpect(jsonPath("$.description").value("New Description"));
 
         verify(projectService).createProject(any(ProjectCreateRequest.class));
-        verify(projectMapper).toDto(mockEntity);
+        verifyNoMoreInteractions(projectService);
     }
 
     @Test
@@ -204,12 +183,10 @@ class ProjectControllerTest {
                 }
                 """;
 
-        mockMvc.perform(
-                        post("/api/v1/projects")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(post("/api/v1/projects")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Validation Failed"))
@@ -227,11 +204,9 @@ class ProjectControllerTest {
                 }
                 """;
 
-        mockMvc.perform(
-                        post("/api/v1/projects")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
+        mockMvc.perform(post("/api/v1/projects")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("name")));
 
@@ -247,11 +222,9 @@ class ProjectControllerTest {
                 }
                 """;
 
-        mockMvc.perform(
-                        post("/api/v1/projects")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
+        mockMvc.perform(post("/api/v1/projects")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("createdById")));
 
@@ -271,14 +244,15 @@ class ProjectControllerTest {
         when(projectService.createProject(any(ProjectCreateRequest.class)))
                 .thenThrow(new UserNotFoundException(99999L));
 
-        mockMvc.perform(
-                        post("/api/v1/projects")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
+        mockMvc.perform(post("/api/v1/projects")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("User with id 99999 not found"));
+
+        verify(projectService).createProject(any(ProjectCreateRequest.class));
+        verifyNoMoreInteractions(projectService);
     }
 
     @Test
@@ -286,12 +260,11 @@ class ProjectControllerTest {
         Long projectId = 1L;
         doNothing().when(projectService).deleteProject(projectId);
 
-        mockMvc.perform(
-                        delete("/api/v1/projects/{id}", projectId)
-                )
+        mockMvc.perform(delete("/api/v1/projects/{id}", projectId))
                 .andExpect(status().isNoContent());
 
         verify(projectService).deleteProject(projectId);
+        verifyNoMoreInteractions(projectService);
     }
 
     @Test
@@ -300,10 +273,11 @@ class ProjectControllerTest {
         doThrow(new ProjectNotFoundException(projectId))
                 .when(projectService).deleteProject(projectId);
 
-        mockMvc.perform(
-                        delete("/api/v1/projects/{id}", projectId)
-                )
+        mockMvc.perform(delete("/api/v1/projects/{id}", projectId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Project with id 99999 not found"));
+
+        verify(projectService).deleteProject(projectId);
+        verifyNoMoreInteractions(projectService);
     }
 }

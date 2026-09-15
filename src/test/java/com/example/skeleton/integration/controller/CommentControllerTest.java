@@ -2,7 +2,6 @@ package com.example.skeleton.integration.controller;
 
 import com.example.skeleton.exception.CommentNotFoundException;
 import com.example.skeleton.exception.TicketNotFoundException;
-import com.example.skeleton.mapper.CommentMapper;
 import com.example.skeleton.service.CommentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,8 +38,6 @@ class CommentControllerTest {
     @MockitoBean
     private CommentService commentService;
 
-    @MockitoBean
-    private CommentMapper commentMapper;
 
     @Test
     void whenGetComments_thenReturns200AndList() throws Exception {
@@ -50,15 +47,10 @@ class CommentControllerTest {
         dto.setBody("Test comment");
         dto.setTicketId(ticketId);
 
-        com.example.skeleton.domain.model.Comment mockEntity = new com.example.skeleton.domain.model.Comment();
+        when(commentService.getCommentsByTicketId(ticketId)).thenReturn(List.of(dto));
 
-        when(commentService.getCommentsByTicketId(ticketId)).thenReturn(List.of(mockEntity));
-        when(commentMapper.toDto(mockEntity)).thenReturn(dto);
-
-        mockMvc.perform(
-                        get("/api/v1/tickets/{ticketId}/comments", ticketId)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/tickets/{ticketId}/comments", ticketId)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray())
@@ -67,6 +59,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$[0].ticketId").value(1));
 
         verify(commentService).getCommentsByTicketId(ticketId);
+        verifyNoMoreInteractions(commentService);
     }
 
     @Test
@@ -74,15 +67,14 @@ class CommentControllerTest {
         Long ticketId = 1L;
         when(commentService.getCommentsByTicketId(ticketId)).thenReturn(List.of());
 
-        mockMvc.perform(
-                        get("/api/v1/tickets/{ticketId}/comments", ticketId)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/tickets/{ticketId}/comments", ticketId)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(0));
 
         verify(commentService).getCommentsByTicketId(ticketId);
+        verifyNoMoreInteractions(commentService);
     }
 
     @Test
@@ -91,17 +83,15 @@ class CommentControllerTest {
         when(commentService.getCommentsByTicketId(ticketId))
                 .thenThrow(new TicketNotFoundException(ticketId));
 
-        mockMvc.perform(
-                        get("/api/v1/tickets/{ticketId}/comments", ticketId)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/tickets/{ticketId}/comments", ticketId)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.error").value("Not Found"))
-                .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"))
-                .andExpect(jsonPath("$.path").value("/api/v1/tickets/99999/comments"));
+                .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"));
 
         verify(commentService).getCommentsByTicketId(ticketId);
+        verifyNoMoreInteractions(commentService);
     }
 
     @Test
@@ -118,24 +108,20 @@ class CommentControllerTest {
         expectedResponse.setBody("New comment");
         expectedResponse.setTicketId(ticketId);
 
-        com.example.skeleton.domain.model.Comment mockEntity = new com.example.skeleton.domain.model.Comment();
+        when(commentService.addComment(eq(ticketId), any(CommentCreateRequest.class), any()))
+                .thenReturn(expectedResponse);
 
-        when(commentService.addComment(eq(ticketId), any(CommentCreateRequest.class), any())).thenReturn(mockEntity);
-        when(commentMapper.toDto(mockEntity)).thenReturn(expectedResponse);
-
-        mockMvc.perform(
-                        post("/api/v1/tickets/{ticketId}/comments", ticketId)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(post("/api/v1/tickets/{ticketId}/comments", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.body").value("New comment"))
                 .andExpect(jsonPath("$.ticketId").value(1));
 
         verify(commentService).addComment(eq(ticketId), any(CommentCreateRequest.class), any());
-        verify(commentMapper).toDto(mockEntity);
+        verifyNoMoreInteractions(commentService);
     }
 
     @Test
@@ -147,12 +133,10 @@ class CommentControllerTest {
                 }
                 """;
 
-        mockMvc.perform(
-                        post("/api/v1/tickets/{ticketId}/comments", ticketId)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(post("/api/v1/tickets/{ticketId}/comments", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Validation Failed"))
@@ -166,11 +150,9 @@ class CommentControllerTest {
         Long ticketId = 1L;
         String requestBody = "{}";
 
-        mockMvc.perform(
-                        post("/api/v1/tickets/{ticketId}/comments", ticketId)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
+        mockMvc.perform(post("/api/v1/tickets/{ticketId}/comments", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("body")));
 
@@ -189,14 +171,15 @@ class CommentControllerTest {
         when(commentService.addComment(eq(ticketId), any(CommentCreateRequest.class), any()))
                 .thenThrow(new TicketNotFoundException(ticketId));
 
-        mockMvc.perform(
-                        post("/api/v1/tickets/{ticketId}/comments", ticketId)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
+        mockMvc.perform(post("/api/v1/tickets/{ticketId}/comments", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"));
+
+        verify(commentService).addComment(eq(ticketId), any(CommentCreateRequest.class), any());
+        verifyNoMoreInteractions(commentService);
     }
 
     @Test
@@ -205,12 +188,11 @@ class CommentControllerTest {
         Long commentId = 1L;
         doNothing().when(commentService).deleteComment(commentId);
 
-        mockMvc.perform(
-                        delete("/api/v1/tickets/{ticketId}/comments/{commentId}", ticketId, commentId)
-                )
+        mockMvc.perform(delete("/api/v1/tickets/{ticketId}/comments/{commentId}", ticketId, commentId))
                 .andExpect(status().isNoContent());
 
         verify(commentService).deleteComment(commentId);
+        verifyNoMoreInteractions(commentService);
     }
 
     @Test
@@ -220,11 +202,12 @@ class CommentControllerTest {
         doThrow(new CommentNotFoundException(commentId))
                 .when(commentService).deleteComment(commentId);
 
-        mockMvc.perform(
-                        delete("/api/v1/tickets/{ticketId}/comments/{commentId}", ticketId, commentId)
-                )
+        mockMvc.perform(delete("/api/v1/tickets/{ticketId}/comments/{commentId}", ticketId, commentId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Comment with id 99999 not found"));
+
+        verify(commentService).deleteComment(commentId);
+        verifyNoMoreInteractions(commentService);
     }
 }

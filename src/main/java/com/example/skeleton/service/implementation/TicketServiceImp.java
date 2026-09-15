@@ -15,13 +15,12 @@ import com.example.skeleton.service.TicketService;
 import com.example.skeleton.specification.TicketSpecificationBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.openapitools.model.TicketCreateRequest;
-import org.openapitools.model.TicketSearchRequest;
-import org.openapitools.model.TicketUpdateRequest;
+import org.openapitools.model.*;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -38,15 +37,46 @@ public class TicketServiceImp implements TicketService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Ticket> searchTickets(TicketSearchRequest searchRequest, Pageable pageable) {
+    public Page<TicketDto> searchTickets(
+            TicketStatus status,
+            Priority priority,
+            Long assigneeId,
+            LocalDate dueBefore,
+            LocalDate dueAfter,
+            String titleContains,
+            Integer page,
+            Integer size,
+            String sortBy,
+            String sortDirection
+    ) {
+        String sortField = sortBy != null && !sortBy.isEmpty() ? sortBy : "priority";
+        Sort.Direction direction = Sort.Direction.fromString(
+                sortDirection != null && !sortDirection.isEmpty() ? sortDirection : "desc"
+        );
+        Sort sortObj = Sort.by(direction, sortField);
+
+        Pageable pageable = PageRequest.of(
+                page != null ? page : 0,
+                size != null ? size : 20,
+                sortObj
+        );
+
+        TicketSearchRequest searchRequest = new TicketSearchRequest();
+        searchRequest.setStatus(status);
+        searchRequest.setPriority(priority);
+        searchRequest.setAssigneeId(assigneeId);
+        searchRequest.setDueBefore(dueBefore);
+        searchRequest.setDueAfter(dueAfter);
+        searchRequest.setTitleContains(titleContains);
+
         boolean sortByPriority = pageable.getSort().stream()
                 .anyMatch(o -> "priority".equals(o.getProperty()));
 
-        if (sortByPriority) {
-            return searchWithPrioritySort(searchRequest, pageable);
-        }
+        Page<Ticket> ticketPage = sortByPriority
+                ? searchWithPrioritySort(searchRequest, pageable)
+                : ticketRepository.findAll(buildSpecification(searchRequest), pageable);
 
-        return ticketRepository.findAll(buildSpecification(searchRequest), pageable);
+        return ticketPage.map(ticketMapper::toDto);
     }
 
     private Page<Ticket> searchWithPrioritySort(TicketSearchRequest searchRequest, Pageable pageable) {
@@ -93,14 +123,17 @@ public class TicketServiceImp implements TicketService {
 
     @Override
     @Transactional(readOnly = true)
-    public Ticket getTicketById(Long id) {
-        return ticketRepository.findById(id)
+    public TicketDto getTicketById(Long id) {
+        Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException(id));
+        return ticketMapper.toDto(ticket);
     }
 
     @Override
     @Transactional
-    public Ticket createTicket(TicketCreateRequest request) {
+    public TicketDto createTicket(TicketCreateRequest request) {
+        log.info("Creating ticket: title={}, projectId={}", request.getTitle(), request.getProjectId());
+
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new ProjectNotFoundException(request.getProjectId()));
 
@@ -117,13 +150,38 @@ public class TicketServiceImp implements TicketService {
             ticket.setStatus(com.example.skeleton.domain.enums.TicketStatus.OPEN);
         }
 
-        return ticketRepository.save(ticket);
+        Ticket saved = ticketRepository.save(ticket);
+        return ticketMapper.toDto(saved);
     }
 
     @Override
     @Transactional
-    public Ticket updateTicket(Long id, TicketUpdateRequest request) {
-        Ticket ticket = getTicketById(id);
+    public TicketDto updateTicket(Long id, TicketPutRequest request) {
+        log.info("Full update (PUT) ticket id: {}", id);
+
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new TicketNotFoundException(id));
+
+        User assignee = null;
+        if (request.getAssigneeId() != null) {
+            assignee = userRepository.findById(request.getAssigneeId())
+                    .orElseThrow(() -> new UserNotFoundException(request.getAssigneeId()));
+        }
+        ticket.setAssignee(assignee);
+
+        ticketMapper.replaceFromRequest(request, ticket);
+
+        Ticket updated = ticketRepository.save(ticket);
+        return ticketMapper.toDto(updated);
+    }
+
+    @Override
+    @Transactional
+    public TicketDto partialUpdateTicket(Long id, TicketUpdateRequest request) {
+        log.info("Partial update (PATCH) ticket id: {}", id);
+
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new TicketNotFoundException(id));
 
         if (request.getAssigneeId() != null) {
             User assignee = userRepository.findById(request.getAssigneeId())
@@ -131,20 +189,17 @@ public class TicketServiceImp implements TicketService {
             ticket.setAssignee(assignee);
         }
 
-        ticketMapper.updateFromRequest(request, ticket);
-        return ticketRepository.save(ticket);
-    }
+        ticketMapper.patchFromRequest(request, ticket);
 
-    @Override
-    @Transactional
-    public Ticket partialUpdateTicket(Long id, TicketUpdateRequest request) {
-        return updateTicket(id, request);
+        Ticket updated = ticketRepository.save(ticket);
+        return ticketMapper.toDto(updated);
     }
 
     @Override
     @Transactional
     public void deleteTicket(Long id) {
-        Ticket ticket = getTicketById(id);
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new TicketNotFoundException(id));
         ticketRepository.delete(ticket);
     }
 }

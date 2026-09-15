@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.openapitools.model.CommentCreateRequest;
+import org.openapitools.model.CommentDto;
 
 import java.util.List;
 import java.util.Optional;
@@ -49,6 +50,7 @@ class CommentServiceTest {
     private User user;
     private Ticket ticket;
     private Comment comment;
+    private CommentDto commentDto;
 
     @BeforeEach
     void setUp() {
@@ -79,23 +81,32 @@ class CommentServiceTest {
                 .body("Test comment")
                 .build();
         comment.setId(1L);
+
+        commentDto = new CommentDto();
+        commentDto.setId(1L);
+        commentDto.setBody("Test comment");
+        commentDto.setTicketId(1L);
+        commentDto.setAuthorId(1L);
     }
 
     @Test
-    void whenTicketExists_thenReturnsComments() {
+    void whenTicketExists_thenReturnsCommentDtos() {
         when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
         when(commentRepository.findByTicket(ticket)).thenReturn(List.of(comment));
+        when(commentMapper.toDto(comment)).thenReturn(commentDto);
 
-        List<Comment> result = commentService.getCommentsByTicketId(1L);
+        List<CommentDto> result = commentService.getCommentsByTicketId(1L);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getBody()).isEqualTo("Test comment");
+        assertThat(result.get(0).getTicketId()).isEqualTo(1L);
 
         verify(ticketRepository).findById(1L);
         verify(commentRepository).findByTicket(ticket);
+        verify(commentMapper).toDto(comment);
 
-        verifyNoMoreInteractions(ticketRepository, commentRepository);
-        verifyNoInteractions(userRepository, commentMapper);
+        verifyNoMoreInteractions(ticketRepository, commentRepository, commentMapper);
+        verifyNoInteractions(userRepository);
     }
 
     @Test
@@ -103,7 +114,7 @@ class CommentServiceTest {
         when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
         when(commentRepository.findByTicket(ticket)).thenReturn(List.of());
 
-        List<Comment> result = commentService.getCommentsByTicketId(1L);
+        List<CommentDto> result = commentService.getCommentsByTicketId(1L);
 
         assertThat(result).isEmpty();
 
@@ -128,7 +139,7 @@ class CommentServiceTest {
     }
 
     @Test
-    void whenAddComment_thenReturnsSavedComment() {
+    void whenAddComment_thenReturnsCommentDto() {
         CommentCreateRequest request = new CommentCreateRequest();
         request.setBody("New comment");
 
@@ -136,17 +147,20 @@ class CommentServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(commentMapper.toEntity(request)).thenReturn(comment);
         when(commentRepository.save(comment)).thenReturn(comment);
+        when(commentMapper.toDto(comment)).thenReturn(commentDto);
 
-        Comment result = commentService.addComment(1L, request, 1L);
+        CommentDto result = commentService.addComment(1L, request, 1L);
 
         assertThat(result).isNotNull();
-        assertThat(result.getTicket()).isEqualTo(ticket);
-        assertThat(result.getAuthor()).isEqualTo(user);
+        assertThat(result.getBody()).isEqualTo("Test comment");
+        assertThat(comment.getTicket()).isEqualTo(ticket);
+        assertThat(comment.getAuthor()).isEqualTo(user);
 
         verify(ticketRepository).findById(1L);
         verify(userRepository).findById(1L);
         verify(commentMapper).toEntity(request);
         verify(commentRepository).save(comment);
+        verify(commentMapper).toDto(comment);
 
         verifyNoMoreInteractions(ticketRepository, userRepository, commentMapper, commentRepository);
     }

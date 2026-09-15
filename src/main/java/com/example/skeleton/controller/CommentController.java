@@ -1,7 +1,5 @@
 package com.example.skeleton.controller;
 
-import com.example.skeleton.domain.model.Comment;
-import com.example.skeleton.mapper.CommentMapper;
 import com.example.skeleton.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,23 +21,18 @@ import java.util.List;
 public class CommentController implements CommentsApi {
 
     private final CommentService commentService;
-    private final CommentMapper commentMapper;
 
     private static final Long DEFAULT_USER_ID = 1L;
 
     @Override
     public ResponseEntity<List<CommentDto>> getTicketComments(Long ticketId) {
-        List<Comment> comments = commentService.getCommentsByTicketId(ticketId);
-        List<CommentDto> commentDtos = comments.stream()
-                .map(commentMapper::toDto)
-                .toList();
-        return ResponseEntity.ok(commentDtos);
+        return ResponseEntity.ok(commentService.getCommentsByTicketId(ticketId));
     }
 
     @Override
-    public ResponseEntity<CommentDto> addComment(Long ticketId,@Valid CommentCreateRequest request) {
-        Comment comment = commentService.addComment(ticketId, request,DEFAULT_USER_ID );
-        return ResponseEntity.status(HttpStatus.CREATED).body(commentMapper.toDto(comment));
+    public ResponseEntity<CommentDto> addComment(Long ticketId, @Valid CommentCreateRequest request) {
+        CommentDto comment = commentService.addComment(ticketId, request, DEFAULT_USER_ID);
+        return ResponseEntity.status(HttpStatus.CREATED).body(comment);
     }
 
     @Override

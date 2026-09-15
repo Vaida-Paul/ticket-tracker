@@ -11,8 +11,11 @@ import com.example.skeleton.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.ProjectCreateRequest;
+import org.openapitools.model.ProjectDto;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
@@ -25,32 +28,51 @@ public class ProjectServiceImp implements ProjectService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Project> getAllProjects(Pageable pageable) {
-        return projectRepository.findAll(pageable);
+    public Page<ProjectDto> getAllProjects(Integer page, Integer size, String sortBy, String sortDirection) {
+        String sortField = sortBy != null && !sortBy.isEmpty() ? sortBy : "createdAt";
+        Sort.Direction direction = Sort.Direction.fromString(
+                sortDirection != null && !sortDirection.isEmpty() ? sortDirection : "desc"
+        );
+        Sort sortObj = Sort.by(direction, sortField);
+
+        Pageable pageable = PageRequest.of(
+                page != null ? page : 0,
+                size != null ? size : 20,
+                sortObj
+        );
+
+        return projectRepository.findAll(pageable).map(projectMapper::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Project getProjectById(Long id) {
-        return projectRepository.findById(id)
+    public ProjectDto getProjectById(Long id) {
+        Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException(id));
+        return projectMapper.toDto(project);
     }
 
     @Override
     @Transactional
-    public Project createProject(ProjectCreateRequest request) {
+    public ProjectDto createProject(ProjectCreateRequest request) {
+        log.info("Creating project: name={}, createdById={}",
+                request.getName(), request.getCreatedById());
+
         User createdBy = userRepository.findById(request.getCreatedById())
                 .orElseThrow(() -> new UserNotFoundException(request.getCreatedById()));
 
         Project project = projectMapper.toEntity(request);
         project.setCreatedBy(createdBy);
-        return projectRepository.save(project);
+
+        Project saved = projectRepository.save(project);
+        return projectMapper.toDto(saved);
     }
 
     @Override
     @Transactional
     public void deleteProject(Long id) {
-        Project project = getProjectById(id);
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ProjectNotFoundException(id));
         projectRepository.delete(project);
     }
 }

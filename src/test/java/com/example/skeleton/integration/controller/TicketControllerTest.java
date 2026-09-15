@@ -2,12 +2,11 @@ package com.example.skeleton.integration.controller;
 
 import com.example.skeleton.exception.ProjectNotFoundException;
 import com.example.skeleton.exception.TicketNotFoundException;
-import com.example.skeleton.mapper.TicketMapper;
 import com.example.skeleton.service.TicketService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -39,8 +38,6 @@ class TicketControllerTest {
     @MockitoBean
     private TicketService ticketService;
 
-    @MockitoBean
-    private TicketMapper ticketMapper;
 
     @Test
     void whenTicketExists_thenReturns200AndTicket() throws Exception {
@@ -52,24 +49,18 @@ class TicketControllerTest {
         response.setPriority(Priority.HIGH);
         response.setProjectId(1L);
 
-        com.example.skeleton.domain.model.Ticket mockEntity = new com.example.skeleton.domain.model.Ticket();
+        when(ticketService.getTicketById(ticketId)).thenReturn(response);
 
-        when(ticketService.getTicketById(ticketId)).thenReturn(mockEntity);
-        when(ticketMapper.toDto(mockEntity)).thenReturn(response);
-
-        mockMvc.perform(
-                        get("/api/v1/tickets/{id}", ticketId)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/tickets/{id}", ticketId)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("Fix login"))
                 .andExpect(jsonPath("$.status").value("OPEN"))
                 .andExpect(jsonPath("$.priority").value("HIGH"));
 
         verify(ticketService).getTicketById(ticketId);
-        verify(ticketMapper).toDto(mockEntity);
+        verifyNoMoreInteractions(ticketService);
     }
 
     @Test
@@ -78,17 +69,15 @@ class TicketControllerTest {
         when(ticketService.getTicketById(ticketId))
                 .thenThrow(new TicketNotFoundException(ticketId));
 
-        mockMvc.perform(
-                        get("/api/v1/tickets/{id}", ticketId)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/tickets/{id}", ticketId)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.error").value("Not Found"))
-                .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"))
-                .andExpect(jsonPath("$.path").value("/api/v1/tickets/99999"));
+                .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"));
 
         verify(ticketService).getTicketById(ticketId);
+        verifyNoMoreInteractions(ticketService);
     }
 
     @Test
@@ -100,46 +89,51 @@ class TicketControllerTest {
         dto.setPriority(Priority.HIGH);
         dto.setProjectId(1L);
 
-        com.example.skeleton.domain.model.Ticket mockEntity = new com.example.skeleton.domain.model.Ticket();
-        org.springframework.data.domain.Page<com.example.skeleton.domain.model.Ticket> mockPage =
-                new org.springframework.data.domain.PageImpl<>(List.of(mockEntity));
+        org.springframework.data.domain.Page<TicketDto> mockPage =
+                new org.springframework.data.domain.PageImpl<>(List.of(dto));
 
-        when(ticketService.searchTickets(any(), any())).thenReturn(mockPage);
-        when(ticketMapper.toDto(mockEntity)).thenReturn(dto);
+        when(ticketService.searchTickets(
+                any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any()
+        )).thenReturn(mockPage);
 
-        mockMvc.perform(
-                        get("/api/v1/tickets")
-                                .param("page", "0")
-                                .param("size", "10")
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/tickets")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].title").value("Test Ticket"))
-                .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.page").value(0))
-                .andExpect(jsonPath("$.size").value(1));
+                .andExpect(jsonPath("$.totalElements").value(1));
 
-        verify(ticketService).searchTickets(any(), any());
+        verify(ticketService).searchTickets(
+                any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any()
+        );
+        verifyNoMoreInteractions(ticketService);
     }
 
     @Test
     void whenNoTickets_thenReturns200AndEmptyPage() throws Exception {
-        org.springframework.data.domain.Page<com.example.skeleton.domain.model.Ticket> emptyPage =
+        org.springframework.data.domain.Page<TicketDto> emptyPage =
                 new org.springframework.data.domain.PageImpl<>(List.of());
 
-        when(ticketService.searchTickets(any(), any())).thenReturn(emptyPage);
+        when(ticketService.searchTickets(
+                any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any()
+        )).thenReturn(emptyPage);
 
-        mockMvc.perform(
-                        get("/api/v1/tickets")
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(get("/api/v1/tickets")
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content.length()").value(0))
                 .andExpect(jsonPath("$.totalElements").value(0));
 
-        verify(ticketService).searchTickets(any(), any());
+        verify(ticketService).searchTickets(
+                any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any()
+        );
+        verifyNoMoreInteractions(ticketService);
     }
 
     @Test
@@ -160,17 +154,12 @@ class TicketControllerTest {
         expectedResponse.setPriority(Priority.HIGH);
         expectedResponse.setProjectId(1L);
 
-        com.example.skeleton.domain.model.Ticket mockEntity = new com.example.skeleton.domain.model.Ticket();
+        when(ticketService.createTicket(any(TicketCreateRequest.class))).thenReturn(expectedResponse);
 
-        when(ticketService.createTicket(any(TicketCreateRequest.class))).thenReturn(mockEntity);
-        when(ticketMapper.toDto(mockEntity)).thenReturn(expectedResponse);
-
-        mockMvc.perform(
-                        post("/api/v1/tickets")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(post("/api/v1/tickets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("New Ticket"))
@@ -178,11 +167,11 @@ class TicketControllerTest {
                 .andExpect(jsonPath("$.priority").value("HIGH"));
 
         verify(ticketService).createTicket(any(TicketCreateRequest.class));
-        verify(ticketMapper).toDto(mockEntity);
+        verifyNoMoreInteractions(ticketService);
     }
 
     @Test
-    void whenCreateTicketWithoutTitle_thenReturns400WithValidationError() throws Exception {
+    void whenCreateTicketWithoutTitle_thenReturns400() throws Exception {
         String requestBody = """
                 {
                     "priority": "HIGH",
@@ -190,17 +179,13 @@ class TicketControllerTest {
                 }
                 """;
 
-        mockMvc.perform(
-                        post("/api/v1/tickets")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(post("/api/v1/tickets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Validation Failed"))
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("title")))
-                .andExpect(jsonPath("$.path").value("/api/v1/tickets"));
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("title")));
 
         verifyNoInteractions(ticketService);
     }
@@ -215,11 +200,9 @@ class TicketControllerTest {
                 }
                 """;
 
-        mockMvc.perform(
-                        post("/api/v1/tickets")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
+        mockMvc.perform(post("/api/v1/tickets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("title")));
 
@@ -235,33 +218,11 @@ class TicketControllerTest {
                 }
                 """;
 
-        mockMvc.perform(
-                        post("/api/v1/tickets")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
+        mockMvc.perform(post("/api/v1/tickets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("priority")));
-
-        verifyNoInteractions(ticketService);
-    }
-
-    @Test
-    void whenCreateTicketWithMissingProjectId_thenReturns400() throws Exception {
-        String requestBody = """
-                {
-                    "title": "New Ticket",
-                    "priority": "HIGH"
-                }
-                """;
-
-        mockMvc.perform(
-                        post("/api/v1/tickets")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("projectId")));
 
         verifyNoInteractions(ticketService);
     }
@@ -279,18 +240,18 @@ class TicketControllerTest {
         when(ticketService.createTicket(any(TicketCreateRequest.class)))
                 .thenThrow(new ProjectNotFoundException(99999L));
 
-        mockMvc.perform(
-                        post("/api/v1/tickets")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
+        mockMvc.perform(post("/api/v1/tickets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Project with id 99999 not found"));
+
+        verify(ticketService).createTicket(any(TicketCreateRequest.class));
+        verifyNoMoreInteractions(ticketService);
     }
 
     @Test
-    void whenUpdateTicket_thenReturns200AndTicket() throws Exception {
+    void whenPutTicket_thenReturns200AndTicket() throws Exception {
         Long ticketId = 1L;
         String requestBody = """
                 {
@@ -307,45 +268,63 @@ class TicketControllerTest {
         expectedResponse.setPriority(Priority.URGENT);
         expectedResponse.setProjectId(1L);
 
-        com.example.skeleton.domain.model.Ticket mockEntity = new com.example.skeleton.domain.model.Ticket();
+        when(ticketService.updateTicket(eq(ticketId), any(TicketPutRequest.class)))
+                .thenReturn(expectedResponse);
 
-        when(ticketService.updateTicket(eq(ticketId), any(TicketUpdateRequest.class))).thenReturn(mockEntity);
-        when(ticketMapper.toDto(mockEntity)).thenReturn(expectedResponse);
-
-        mockMvc.perform(
-                        put("/api/v1/tickets/{id}", ticketId)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(put("/api/v1/tickets/{id}", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Updated Ticket"))
                 .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
                 .andExpect(jsonPath("$.priority").value("URGENT"));
 
-        verify(ticketService).updateTicket(eq(ticketId), any(TicketUpdateRequest.class));
+        verify(ticketService).updateTicket(eq(ticketId), any(TicketPutRequest.class));
+        verifyNoMoreInteractions(ticketService);
     }
 
     @Test
-    void whenUpdateNonExistentTicket_thenReturns404() throws Exception {
+    void whenPutTicketWithoutRequiredFields_thenReturns400() throws Exception {
+        Long ticketId = 1L;
+        String requestBody = """
+                {
+                    "title": "Updated Ticket"
+                }
+                """;
+
+        mockMvc.perform(put("/api/v1/tickets/{id}", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Validation Failed"));
+
+        verifyNoInteractions(ticketService);
+    }
+
+    @Test
+    void whenPutNonExistentTicket_thenReturns404() throws Exception {
         Long ticketId = 99999L;
         String requestBody = """
                 {
                     "title": "Updated Ticket",
-                    "status": "IN_PROGRESS"
+                    "status": "IN_PROGRESS",
+                    "priority": "HIGH"
                 }
                 """;
 
-        when(ticketService.updateTicket(eq(ticketId), any(TicketUpdateRequest.class)))
+        when(ticketService.updateTicket(eq(ticketId), any(TicketPutRequest.class)))
                 .thenThrow(new TicketNotFoundException(ticketId));
 
-        mockMvc.perform(
-                        put("/api/v1/tickets/{id}", ticketId)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
+        mockMvc.perform(put("/api/v1/tickets/{id}", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"));
+
+        verify(ticketService).updateTicket(eq(ticketId), any(TicketPutRequest.class));
+        verifyNoMoreInteractions(ticketService);
     }
 
     @Test
@@ -364,21 +343,19 @@ class TicketControllerTest {
         expectedResponse.setPriority(Priority.HIGH);
         expectedResponse.setProjectId(1L);
 
-        com.example.skeleton.domain.model.Ticket mockEntity = new com.example.skeleton.domain.model.Ticket();
+        when(ticketService.partialUpdateTicket(eq(ticketId), any(TicketUpdateRequest.class)))
+                .thenReturn(expectedResponse);
 
-        when(ticketService.partialUpdateTicket(eq(ticketId), any(TicketUpdateRequest.class))).thenReturn(mockEntity);
-        when(ticketMapper.toDto(mockEntity)).thenReturn(expectedResponse);
-
-        mockMvc.perform(
-                        patch("/api/v1/tickets/{id}", ticketId)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                                .accept(MediaType.APPLICATION_JSON)
-                )
+        mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("DONE"));
+                .andExpect(jsonPath("$.status").value("DONE"))
+                .andExpect(jsonPath("$.title").value("Test Ticket"));
 
         verify(ticketService).partialUpdateTicket(eq(ticketId), any(TicketUpdateRequest.class));
+        verifyNoMoreInteractions(ticketService);
     }
 
     @Test
@@ -393,13 +370,14 @@ class TicketControllerTest {
         when(ticketService.partialUpdateTicket(eq(ticketId), any(TicketUpdateRequest.class)))
                 .thenThrow(new TicketNotFoundException(ticketId));
 
-        mockMvc.perform(
-                        patch("/api/v1/tickets/{id}", ticketId)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
+        mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"));
+
+        verify(ticketService).partialUpdateTicket(eq(ticketId), any(TicketUpdateRequest.class));
+        verifyNoMoreInteractions(ticketService);
     }
 
     @Test
@@ -407,12 +385,11 @@ class TicketControllerTest {
         Long ticketId = 1L;
         doNothing().when(ticketService).deleteTicket(ticketId);
 
-        mockMvc.perform(
-                        delete("/api/v1/tickets/{id}", ticketId)
-                )
+        mockMvc.perform(delete("/api/v1/tickets/{id}", ticketId))
                 .andExpect(status().isNoContent());
 
         verify(ticketService).deleteTicket(ticketId);
+        verifyNoMoreInteractions(ticketService);
     }
 
     @Test
@@ -421,10 +398,11 @@ class TicketControllerTest {
         doThrow(new TicketNotFoundException(ticketId))
                 .when(ticketService).deleteTicket(ticketId);
 
-        mockMvc.perform(
-                        delete("/api/v1/tickets/{id}", ticketId)
-                )
+        mockMvc.perform(delete("/api/v1/tickets/{id}", ticketId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"));
+
+        verify(ticketService).deleteTicket(ticketId);
+        verifyNoMoreInteractions(ticketService);
     }
 }

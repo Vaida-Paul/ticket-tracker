@@ -241,6 +241,7 @@
 							<configOptions>
 								<interfaceOnly>true</interfaceOnly>
 								<useSpringBoot3>true</useSpringBoot3>
+								<useJackson3>true</useJackson3>
 								<useSwaggerUI>false</useSwaggerUI>
 								<useBeanValidation>false</useBeanValidation>
 								<useValidAnnotation>false</useValidAnnotation>
