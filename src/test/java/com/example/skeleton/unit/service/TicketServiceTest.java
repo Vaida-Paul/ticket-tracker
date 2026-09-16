@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.openapitools.model.*;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
@@ -275,7 +276,7 @@ class TicketServiceTest {
 
     @Test
     void whenPatchTicketWithValidData_thenReturnsTicketDto() {
-        TicketUpdateRequest request = new TicketUpdateRequest();
+        TicketPatchRequest request = new TicketPatchRequest();
         request.setStatus(TicketStatus.DONE);
 
         when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
@@ -298,7 +299,7 @@ class TicketServiceTest {
 
     @Test
     void whenPatchNonExistentTicket_thenThrowsException() {
-        TicketUpdateRequest request = new TicketUpdateRequest();
+        TicketPatchRequest request = new TicketPatchRequest();
         request.setStatus(TicketStatus.DONE);
 
         when(ticketRepository.findById(99999L)).thenReturn(Optional.empty());
@@ -319,8 +320,8 @@ class TicketServiceTest {
                 .build();
         newAssignee.setId(2L);
 
-        TicketUpdateRequest request = new TicketUpdateRequest();
-        request.setAssigneeId(2L);
+        TicketPatchRequest request = new TicketPatchRequest();
+        request.setAssigneeId(JsonNullable.of(2L));
 
         when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
         when(userRepository.findById(2L)).thenReturn(Optional.of(newAssignee));

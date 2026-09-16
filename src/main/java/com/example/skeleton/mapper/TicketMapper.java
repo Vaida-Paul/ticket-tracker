@@ -2,7 +2,7 @@ package com.example.skeleton.mapper;
 
 import com.example.skeleton.domain.model.Ticket;
 import org.mapstruct.*;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.openapitools.model.*;
 
 @Mapper(
@@ -13,8 +13,8 @@ public interface TicketMapper {
 
     @Mapping(source = "project.id", target = "projectId")
     @Mapping(source = "assignee.id", target = "assigneeId")
-    @Mapping(source = "status", target = "status", qualifiedByName = "domainToOpenApiTicketStatus")
-    @Mapping(source = "priority", target = "priority", qualifiedByName = "domainToOpenApiPriority")
+    @Mapping(source = "status", target = "status")
+    @Mapping(source = "priority", target = "priority")
     TicketDto toDto(Ticket ticket);
 
     @Mapping(target = "id", ignore = true)
@@ -23,8 +23,8 @@ public interface TicketMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "comments", ignore = true)
-    @Mapping(source = "status", target = "status", qualifiedByName = "openApiToDomainTicketStatus")
-    @Mapping(source = "priority", target = "priority", qualifiedByName = "openApiToDomainPriority")
+    @Mapping(source = "status", target = "status")
+    @Mapping(source = "priority", target = "priority")
     Ticket toEntity(TicketCreateRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
@@ -34,8 +34,8 @@ public interface TicketMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "comments", ignore = true)
-    @Mapping(source = "status", target = "status", qualifiedByName = "openApiToDomainTicketStatus")
-    @Mapping(source = "priority", target = "priority", qualifiedByName = "openApiToDomainPriority")
+    @Mapping(source = "status", target = "status")
+    @Mapping(source = "priority", target = "priority")
     void replaceFromRequest(TicketPutRequest request, @MappingTarget Ticket entity);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -45,7 +45,14 @@ public interface TicketMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "comments", ignore = true)
-    @Mapping(source = "status", target = "status", qualifiedByName = "openApiToDomainTicketStatus")
-    @Mapping(source = "priority", target = "priority", qualifiedByName = "openApiToDomainPriority")
-    void patchFromRequest(TicketUpdateRequest request, @MappingTarget Ticket entity);
+    @Mapping(source = "status", target = "status")
+    @Mapping(source = "priority", target = "priority")
+    @Mapping(source = "description", target = "description", qualifiedByName = "unwrapJsonNullable")
+    @Mapping(source = "dueDate", target = "dueDate", qualifiedByName = "unwrapJsonNullable")
+    void patchFromRequest(TicketPatchRequest request, @MappingTarget Ticket entity);
+
+    @Named("unwrapJsonNullable")
+    default <T> T unwrapJsonNullable(JsonNullable<T> value) {
+        return value == null || !value.isPresent() ? null : value.get();
+    }
 }

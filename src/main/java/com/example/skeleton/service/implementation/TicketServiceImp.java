@@ -15,6 +15,7 @@ import com.example.skeleton.service.TicketService;
 import com.example.skeleton.specification.TicketSpecificationBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.openapitools.model.*;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
@@ -177,16 +178,21 @@ public class TicketServiceImp implements TicketService {
 
     @Override
     @Transactional
-    public TicketDto partialUpdateTicket(Long id, TicketUpdateRequest request) {
+    public TicketDto partialUpdateTicket(Long id, TicketPatchRequest request) {
         log.info("Partial update (PATCH) ticket id: {}", id);
 
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException(id));
 
-        if (request.getAssigneeId() != null) {
-            User assignee = userRepository.findById(request.getAssigneeId())
-                    .orElseThrow(() -> new UserNotFoundException(request.getAssigneeId()));
-            ticket.setAssignee(assignee);
+        if (request.getAssigneeId().isPresent()) {
+            Long assigneeId = request.getAssigneeId().get();
+            if (assigneeId != null) {
+                User assignee = userRepository.findById(assigneeId)
+                        .orElseThrow(() -> new UserNotFoundException(assigneeId));
+                ticket.setAssignee(assignee);
+            } else {
+                ticket.setAssignee(null);
+            }
         }
 
         ticketMapper.patchFromRequest(request, ticket);

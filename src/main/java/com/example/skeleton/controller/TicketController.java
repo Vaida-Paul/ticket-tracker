@@ -67,7 +67,7 @@ public class TicketController implements TicketsApi {
     }
 
     @Override
-    public ResponseEntity<TicketDto> patchTicket(Long ticketId, @Valid TicketUpdateRequest request) {
+    public ResponseEntity<TicketDto> patchTicket(Long ticketId, @Valid TicketPatchRequest request) {
         return ResponseEntity.ok(ticketService.partialUpdateTicket(ticketId, request));
     }
 

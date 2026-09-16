@@ -343,7 +343,7 @@ class TicketControllerTest {
         expectedResponse.setPriority(Priority.HIGH);
         expectedResponse.setProjectId(1L);
 
-        when(ticketService.partialUpdateTicket(eq(ticketId), any(TicketUpdateRequest.class)))
+        when(ticketService.partialUpdateTicket(eq(ticketId), any(TicketPatchRequest.class)))
                 .thenReturn(expectedResponse);
 
         mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
@@ -354,7 +354,7 @@ class TicketControllerTest {
                 .andExpect(jsonPath("$.status").value("DONE"))
                 .andExpect(jsonPath("$.title").value("Test Ticket"));
 
-        verify(ticketService).partialUpdateTicket(eq(ticketId), any(TicketUpdateRequest.class));
+        verify(ticketService).partialUpdateTicket(eq(ticketId), any(TicketPatchRequest.class));
         verifyNoMoreInteractions(ticketService);
     }
 
@@ -367,7 +367,7 @@ class TicketControllerTest {
                 }
                 """;
 
-        when(ticketService.partialUpdateTicket(eq(ticketId), any(TicketUpdateRequest.class)))
+        when(ticketService.partialUpdateTicket(eq(ticketId), any(TicketPatchRequest.class)))
                 .thenThrow(new TicketNotFoundException(ticketId));
 
         mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
@@ -376,7 +376,7 @@ class TicketControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"));
 
-        verify(ticketService).partialUpdateTicket(eq(ticketId), any(TicketUpdateRequest.class));
+        verify(ticketService).partialUpdateTicket(eq(ticketId), any(TicketPatchRequest.class));
         verifyNoMoreInteractions(ticketService);
     }
 

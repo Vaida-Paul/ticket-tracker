@@ -94,7 +94,7 @@ public interface TicketService {
      * @throws com.example.skeleton.exception.TicketNotFoundException if the ticket does not exist
      * @throws com.example.skeleton.exception.UserNotFoundException   if the assignee does not exist
      */
-    TicketDto partialUpdateTicket(Long id, TicketUpdateRequest request);
+    TicketDto partialUpdateTicket(Long id, TicketPatchRequest request);
 
     /**
      * Deletes a ticket by its ID.

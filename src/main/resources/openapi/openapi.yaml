@@ -222,7 +222,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: 'schemas.yaml#/TicketUpdateRequest'
+              $ref: 'schemas.yaml#/TicketPatchRequest'
       responses:
         '200':
           description: Ticket updated
@@ -471,7 +471,7 @@ components:
     TicketCreateRequest:
       $ref: 'schemas.yaml#/TicketCreateRequest'
     TicketUpdateRequest:
-      $ref: 'schemas.yaml#/TicketUpdateRequest'
+      $ref: 'schemas.yaml#/TicketPatchRequest'
     CommentDto:
       $ref: 'schemas.yaml#/CommentDto'
     CommentCreateRequest:
