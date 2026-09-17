@@ -23,10 +23,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Set;
 
 import static com.example.skeleton.utils.RequestValidationUtils.*;
@@ -75,45 +71,9 @@ public class TicketServiceImpl implements TicketService {
         searchRequest.setDueAfter(dueAfter);
         searchRequest.setTitleContains(titleContains);
 
-        boolean sortByPriority = pageable.getSort().stream()
-                .anyMatch(o -> "priority".equals(o.getProperty()));
-
-        Page<Ticket> ticketPage = sortByPriority
-                ? searchWithPrioritySort(searchRequest, pageable)
-                : ticketRepository.findAll(buildSpecification(searchRequest), pageable);
+        Page<Ticket> ticketPage = ticketRepository.findAll(buildSpecification(searchRequest), pageable);
 
         return ticketPage.map(ticketMapper::toDto);
-    }
-
-    private Page<Ticket> searchWithPrioritySort(TicketSearchRequest searchRequest, Pageable pageable) {
-        Sort.Order priorityOrder = pageable.getSort().stream()
-                .filter(o -> "priority".equals(o.getProperty()))
-                .findFirst()
-                .orElse(Sort.Order.desc("priority"));
-
-        boolean ascending = priorityOrder.isAscending();
-
-        List<Ticket> allTickets = new ArrayList<>(
-                ticketRepository.findAll(buildSpecification(searchRequest)));
-
-        Comparator<Ticket> comparator = Comparator.comparing(
-                Ticket::getPriority,
-                Comparator.nullsLast(Comparator.naturalOrder())
-        );
-
-        if (!ascending) {
-            comparator = comparator.reversed();
-        }
-
-        allTickets.sort(comparator);
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), allTickets.size());
-        List<Ticket> pageContent = start <= allTickets.size()
-                ? allTickets.subList(start, Math.min(end, allTickets.size()))
-                : List.of();
-
-        return new PageImpl<>(pageContent, pageable, allTickets.size());
     }
 
     private Specification<Ticket> buildSpecification(TicketSearchRequest searchRequest) {
@@ -190,26 +150,14 @@ public class TicketServiceImpl implements TicketService {
                 .orElseThrow(() -> new TicketNotFoundException(id));
 
         JsonNullable<Long> assigneeIdNullable = request.getAssigneeId();
-
         if (assigneeIdNullable != null && assigneeIdNullable.isPresent()) {
             Long assigneeId = assigneeIdNullable.orElse(null);
-
             ticket.setAssignee(
                     assigneeId == null
                             ? null
                             : userRepository.findById(assigneeId)
                             .orElseThrow(() -> new UserNotFoundException(assigneeId))
             );
-        }
-
-        JsonNullable<String> descriptionNullable = request.getDescription();
-        if (descriptionNullable != null && descriptionNullable.isPresent()) {
-            ticket.setDescription(descriptionNullable.orElse(null));
-        }
-
-        JsonNullable<OffsetDateTime> dueDateNullable = request.getDueDate();
-        if (dueDateNullable != null && dueDateNullable.isPresent()) {
-            ticket.setDueDate(dueDateNullable.orElse(null));
         }
 
         ticketMapper.patchFromRequest(request, ticket);

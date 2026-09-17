@@ -69,7 +69,7 @@ paths:
           required: false
           schema:
             type: string
-            default: createdAt
+            default: priority
             enum: [ createdAt, dueDate, priority, title ]
           description: 'Field to sort by. Supported values: createdAt, dueDate, priority, title'
         - name: sortDirection
@@ -265,7 +265,7 @@ paths:
           schema:
             type: string
             default: createdAt
-            enum: [ createdAt, name ]
+            enum: [ createdAt,updatedAt, name ]
           description: 'Field to sort by. Supported values: createdAt, name'
         - name: sortDirection
           in: query

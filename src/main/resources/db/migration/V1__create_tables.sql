@@ -24,7 +24,7 @@ CREATE TABLE tickets (
     title VARCHAR(255) NOT NULL,
     description TEXT,
     status VARCHAR(50) NOT NULL,
-    priority VARCHAR(50) NOT NULL,
+    priority INTEGER NOT NULL,
     project_id BIGINT NOT NULL,
     assignee_id BIGINT,
     due_date TIMESTAMPTZ,

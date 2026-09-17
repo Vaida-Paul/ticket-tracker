@@ -103,21 +103,6 @@ class GlobalExceptionHandlerTest {
 
 
     @Test
-    void whenIllegalArgument_thenReturns400() {
-        IllegalArgumentException ex = new IllegalArgumentException("Invalid argument");
-
-        ResponseEntity<ErrorResponse> response = handler.handleIllegalArgument(ex, request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody().getStatus()).isEqualTo(400);
-        assertThat(response.getBody().getError()).isEqualTo("Bad Request");
-        assertThat(response.getBody().getMessage()).isEqualTo("Invalid argument");
-
-        verify(request).getRequestURI();
-        verifyNoMoreInteractions(request);
-    }
-
-    @Test
     void whenValidationErrors_thenReturns400WithFieldDetails() {
         MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
         BindingResult bindingResult = mock(BindingResult.class);

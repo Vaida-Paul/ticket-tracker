@@ -34,7 +34,7 @@ public class Ticket {
     @Column(nullable = false)
     private TicketStatus status;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.ORDINAL)
     @Column(nullable = false)
     private Priority priority;
 
