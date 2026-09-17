@@ -23,6 +23,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -199,6 +200,16 @@ public class TicketServiceImpl implements TicketService {
                             : userRepository.findById(assigneeId)
                             .orElseThrow(() -> new UserNotFoundException(assigneeId))
             );
+        }
+
+        JsonNullable<String> descriptionNullable = request.getDescription();
+        if (descriptionNullable != null && descriptionNullable.isPresent()) {
+            ticket.setDescription(descriptionNullable.orElse(null));
+        }
+
+        JsonNullable<OffsetDateTime> dueDateNullable = request.getDueDate();
+        if (dueDateNullable != null && dueDateNullable.isPresent()) {
+            ticket.setDueDate(dueDateNullable.orElse(null));
         }
 
         ticketMapper.patchFromRequest(request, ticket);

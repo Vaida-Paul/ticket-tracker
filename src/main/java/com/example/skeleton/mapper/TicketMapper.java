@@ -45,14 +45,9 @@ public interface TicketMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "comments", ignore = true)
+    @Mapping(target = "description", ignore = true)
+    @Mapping(target = "dueDate", ignore = true)
     @Mapping(source = "status", target = "status")
     @Mapping(source = "priority", target = "priority")
-    @Mapping(source = "description", target = "description", qualifiedByName = "unwrapJsonNullable")
-    @Mapping(source = "dueDate", target = "dueDate", qualifiedByName = "unwrapJsonNullable")
     void patchFromRequest(TicketPatchRequest request, @MappingTarget Ticket entity);
-
-    @Named("unwrapJsonNullable")
-    default <T> T unwrapJsonNullable(JsonNullable<T> value) {
-        return value == null || !value.isPresent() ? null : value.get();
-    }
 }
