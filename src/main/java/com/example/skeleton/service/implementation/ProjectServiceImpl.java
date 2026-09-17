@@ -30,8 +30,9 @@ public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
-    private final ProjectMapper projectMapper;
     private final TicketRepository ticketRepository;
+    private final ProjectMapper projectMapper;
+
 
     private static final Set<String> SORT_FIELDS =
             Set.of("createdAt", "updatedAt", "name");

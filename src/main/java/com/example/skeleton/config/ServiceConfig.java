@@ -22,8 +22,9 @@ public class ServiceConfig {
     @Bean
     public ProjectService projectService(ProjectRepository projectRepository,
                                          UserRepository userRepository,
+                                         TicketRepository ticketRepository,
                                          ProjectMapper projectMapper) {
-        return new ProjectServiceImpl(projectRepository, userRepository, projectMapper);
+        return new ProjectServiceImpl(projectRepository, userRepository,ticketRepository, projectMapper);
     }
 
     @Bean
