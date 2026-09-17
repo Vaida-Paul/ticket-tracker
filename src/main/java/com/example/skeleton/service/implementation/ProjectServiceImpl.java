@@ -2,10 +2,12 @@ package com.example.skeleton.service.implementation;
 
 import com.example.skeleton.domain.model.Project;
 import com.example.skeleton.domain.model.User;
+import com.example.skeleton.exception.InvalidRequestException;
 import com.example.skeleton.exception.ProjectNotFoundException;
 import com.example.skeleton.exception.UserNotFoundException;
 import com.example.skeleton.mapper.ProjectMapper;
 import com.example.skeleton.repository.ProjectRepository;
+import com.example.skeleton.repository.TicketRepository;
 import com.example.skeleton.repository.UserRepository;
 import com.example.skeleton.service.ProjectService;
 import lombok.RequiredArgsConstructor;
@@ -18,28 +20,28 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
+import static com.example.skeleton.utils.RequestValidationUtils.*;
+
 @RequiredArgsConstructor
 @Slf4j
-public class ProjectServiceImp implements ProjectService {
+public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectMapper projectMapper;
+    private final TicketRepository ticketRepository;
+
+    private static final Set<String> SORT_FIELDS =
+            Set.of("createdAt", "updatedAt", "name");
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProjectDto> getAllProjects(Integer page, Integer size, String sortBy, String sortDirection) {
-        String sortField = sortBy != null && !sortBy.isEmpty() ? sortBy : "createdAt";
-        Sort.Direction direction = Sort.Direction.fromString(
-                sortDirection != null && !sortDirection.isEmpty() ? sortDirection : "desc"
-        );
-        Sort sortObj = Sort.by(direction, sortField);
-
-        Pageable pageable = PageRequest.of(
-                page != null ? page : 0,
-                size != null ? size : 20,
-                sortObj
-        );
+        String sortField = parseSortField(sortBy, "createdAt", SORT_FIELDS);
+        Sort.Direction direction = parseSortDirection(sortDirection);
+        Pageable pageable = PageRequest.of(parsePage(page), parseSize(size), Sort.by(direction, sortField));
 
         return projectRepository.findAll(pageable).map(projectMapper::toDto);
     }
@@ -73,6 +75,12 @@ public class ProjectServiceImp implements ProjectService {
     public void deleteProject(Long id) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException(id));
+
+        if (ticketRepository.existsByProjectId(id)) {
+            throw new InvalidRequestException(
+                    "Cannot delete project with existing tickets. Delete or reassign tickets first.");
+        }
+
         projectRepository.delete(project);
     }
 }

@@ -10,33 +10,19 @@ import java.time.LocalDate;
 public interface TicketService {
 
     /**
-     2
      * Searches tickets using the provided filter criteria and returns a paginated result.
-     3
      *
-     4
      * @param status the ticket status to filter by
-    5
      * @param priority the ticket priority to filter by
-    6
      * @param assigneeId the ID of the assigned user to filter by
-    7
      * @param dueBefore returns only tickets with a due time before the specified value
-    8
      * @param dueAfter returns only tickets with a due time after the specified value
-    9
      * @param titleContains text that must be contained in the ticket title
-    10
      * @param page the page number to retrieve
-    11
      * @param size the number of tickets per page
-    12
      * @param sortBy the field used for sorting the results
-    13
      * @param sortDirection the sorting direction (e.g. ASC or DESC)
-    14
      * @return a page of matching ticket DTOs
-    15
      */
     Page<TicketDto> searchTickets(
             TicketStatus status,

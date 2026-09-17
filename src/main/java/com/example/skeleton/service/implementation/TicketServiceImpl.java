@@ -3,6 +3,7 @@ package com.example.skeleton.service.implementation;
 import com.example.skeleton.domain.model.Project;
 import com.example.skeleton.domain.model.Ticket;
 import com.example.skeleton.domain.model.User;
+import com.example.skeleton.exception.InvalidRequestException;
 import com.example.skeleton.exception.ProjectNotFoundException;
 import com.example.skeleton.exception.TicketNotFoundException;
 import com.example.skeleton.exception.UserNotFoundException;
@@ -25,16 +26,22 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+
+import static com.example.skeleton.utils.RequestValidationUtils.*;
 
 @RequiredArgsConstructor
 @Slf4j
-public class TicketServiceImp implements TicketService {
+public class TicketServiceImpl implements TicketService {
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final TicketMapper ticketMapper;
     private final EnumMapper enumMapper;
+
+    private static final Set<String> SORT_FIELDS =
+            Set.of("priority", "dueDate", "createdAt", "updatedAt", "title", "status");
 
     @Override
     @Transactional(readOnly = true)
@@ -50,17 +57,14 @@ public class TicketServiceImp implements TicketService {
             String sortBy,
             String sortDirection
     ) {
-        String sortField = sortBy != null && !sortBy.isEmpty() ? sortBy : "priority";
-        Sort.Direction direction = Sort.Direction.fromString(
-                sortDirection != null && !sortDirection.isEmpty() ? sortDirection : "desc"
-        );
+        if (dueBefore != null && dueAfter != null && dueAfter.isAfter(dueBefore)) {
+            throw new InvalidRequestException("dueAfter must be before or equal to dueBefore");
+        }
+        String sortField = parseSortField(sortBy, "priority", SORT_FIELDS);
+        Sort.Direction direction = parseSortDirection(sortDirection);
         Sort sortObj = Sort.by(direction, sortField);
 
-        Pageable pageable = PageRequest.of(
-                page != null ? page : 0,
-                size != null ? size : 20,
-                sortObj
-        );
+        Pageable pageable = PageRequest.of(parsePage(page), parseSize(size), sortObj);
 
         TicketSearchRequest searchRequest = new TicketSearchRequest();
         searchRequest.setStatus(status);
@@ -184,15 +188,17 @@ public class TicketServiceImp implements TicketService {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException(id));
 
-        if (request.getAssigneeId().isPresent()) {
-            Long assigneeId = request.getAssigneeId().get();
-            if (assigneeId != null) {
-                User assignee = userRepository.findById(assigneeId)
-                        .orElseThrow(() -> new UserNotFoundException(assigneeId));
-                ticket.setAssignee(assignee);
-            } else {
-                ticket.setAssignee(null);
-            }
+        JsonNullable<Long> assigneeIdNullable = request.getAssigneeId();
+
+        if (assigneeIdNullable != null && assigneeIdNullable.isPresent()) {
+            Long assigneeId = assigneeIdNullable.orElse(null);
+
+            ticket.setAssignee(
+                    assigneeId == null
+                            ? null
+                            : userRepository.findById(assigneeId)
+                            .orElseThrow(() -> new UserNotFoundException(assigneeId))
+            );
         }
 
         ticketMapper.patchFromRequest(request, ticket);

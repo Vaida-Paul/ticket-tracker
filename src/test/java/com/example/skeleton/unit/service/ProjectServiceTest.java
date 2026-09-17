@@ -7,7 +7,7 @@ import com.example.skeleton.exception.UserNotFoundException;
 import com.example.skeleton.mapper.ProjectMapper;
 import com.example.skeleton.repository.ProjectRepository;
 import com.example.skeleton.repository.UserRepository;
-import com.example.skeleton.service.implementation.ProjectServiceImp;
+import com.example.skeleton.service.implementation.ProjectServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,7 +41,7 @@ class ProjectServiceTest {
     private ProjectMapper projectMapper;
 
     @InjectMocks
-    private ProjectServiceImp projectService;
+    private ProjectServiceImpl projectService;
 
     private User user;
     private Project project;

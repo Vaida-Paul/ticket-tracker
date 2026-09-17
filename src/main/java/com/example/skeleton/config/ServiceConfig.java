@@ -16,14 +16,14 @@ public class ServiceConfig {
                                        ProjectRepository projectRepository,
                                        TicketMapper ticketMapper,
                                        EnumMapper enumMapper) {
-        return new TicketServiceImp(ticketRepository, userRepository, projectRepository, ticketMapper, enumMapper);
+        return new TicketServiceImpl(ticketRepository, userRepository, projectRepository, ticketMapper, enumMapper);
     }
 
     @Bean
     public ProjectService projectService(ProjectRepository projectRepository,
                                          UserRepository userRepository,
                                          ProjectMapper projectMapper) {
-        return new ProjectServiceImp(projectRepository, userRepository, projectMapper);
+        return new ProjectServiceImpl(projectRepository, userRepository, projectMapper);
     }
 
     @Bean
@@ -31,6 +31,6 @@ public class ServiceConfig {
                                          TicketRepository ticketRepository,
                                          UserRepository userRepository,
                                          CommentMapper commentMapper) {
-        return new CommentServiceImp(commentRepository, ticketRepository, userRepository, commentMapper);
+        return new CommentServiceImpl(commentRepository, ticketRepository, userRepository, commentMapper);
     }
 }

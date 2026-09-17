@@ -12,7 +12,7 @@ import com.example.skeleton.mapper.TicketMapper;
 import com.example.skeleton.repository.ProjectRepository;
 import com.example.skeleton.repository.TicketRepository;
 import com.example.skeleton.repository.UserRepository;
-import com.example.skeleton.service.implementation.TicketServiceImp;
+import com.example.skeleton.service.implementation.TicketServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,7 +52,7 @@ class TicketServiceTest {
     private EnumMapper enumMapper;
 
     @InjectMocks
-    private TicketServiceImp ticketService;
+    private TicketServiceImpl ticketService;
 
     private User user;
     private Project project;

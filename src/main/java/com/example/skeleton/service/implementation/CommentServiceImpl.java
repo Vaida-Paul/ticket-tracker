@@ -21,7 +21,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Slf4j
-public class CommentServiceImp implements CommentService {
+public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
     private final TicketRepository ticketRepository;

@@ -13,7 +13,7 @@ import com.example.skeleton.mapper.CommentMapper;
 import com.example.skeleton.repository.CommentRepository;
 import com.example.skeleton.repository.TicketRepository;
 import com.example.skeleton.repository.UserRepository;
-import com.example.skeleton.service.implementation.CommentServiceImp;
+import com.example.skeleton.service.implementation.CommentServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,7 +45,7 @@ class CommentServiceTest {
     private CommentMapper commentMapper;
 
     @InjectMocks
-    private CommentServiceImp commentService;
+    private CommentServiceImpl commentService;
 
     private User user;
     private Ticket ticket;
