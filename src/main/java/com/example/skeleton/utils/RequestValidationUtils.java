@@ -1,6 +1,8 @@
 package com.example.skeleton.utils;
 
 import com.example.skeleton.exception.InvalidRequestException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.util.Set;
@@ -8,6 +10,19 @@ import java.util.Set;
 public final class RequestValidationUtils {
 
     private RequestValidationUtils() {}
+
+    public static Pageable buildPageable(
+            Integer page,
+            Integer size,
+            String sortBy,
+            String defaultSortBy,
+            String sortDirection,
+            Set<String> allowedSortFields
+    ) {
+        String sortField = parseSortField(sortBy, defaultSortBy, allowedSortFields);
+        Sort.Direction direction = parseSortDirection(sortDirection);
+        return PageRequest.of(parsePage(page), parseSize(size), Sort.by(direction, sortField));
+    }
 
     public static Sort.Direction parseSortDirection(String value) {
         String v = (value == null || value.isBlank()) ? "desc" : value;

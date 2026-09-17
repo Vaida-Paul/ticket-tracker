@@ -15,9 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.ProjectCreateRequest;
 import org.openapitools.model.ProjectDto;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
@@ -33,17 +31,13 @@ public class ProjectServiceImpl implements ProjectService {
     private final TicketRepository ticketRepository;
     private final ProjectMapper projectMapper;
 
-
     private static final Set<String> SORT_FIELDS =
             Set.of("createdAt", "updatedAt", "name");
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProjectDto> getAllProjects(Integer page, Integer size, String sortBy, String sortDirection) {
-        String sortField = parseSortField(sortBy, "createdAt", SORT_FIELDS);
-        Sort.Direction direction = parseSortDirection(sortDirection);
-        Pageable pageable = PageRequest.of(parsePage(page), parseSize(size), Sort.by(direction, sortField));
-
+        Pageable pageable = buildPageable(page, size, sortBy, "createdAt", sortDirection, SORT_FIELDS);
         return projectRepository.findAll(pageable).map(projectMapper::toDto);
     }
 

@@ -18,7 +18,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.openapitools.model.*;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,26 +55,39 @@ public class TicketServiceImpl implements TicketService {
             String sortBy,
             String sortDirection
     ) {
+        validateDueDateRange(dueBefore, dueAfter);
+
+        Pageable pageable = buildPageable(page, size, sortBy, "priority", sortDirection, SORT_FIELDS);
+        TicketSearchRequest searchRequest = buildSearchRequest(
+                status, priority, assigneeId, dueBefore, dueAfter, titleContains);
+
+        return ticketRepository
+                .findAll(buildSpecification(searchRequest), pageable)
+                .map(ticketMapper::toDto);
+    }
+
+    private void validateDueDateRange(LocalDate dueBefore, LocalDate dueAfter) {
         if (dueBefore != null && dueAfter != null && dueAfter.isAfter(dueBefore)) {
             throw new InvalidRequestException("dueAfter must be before or equal to dueBefore");
         }
-        String sortField = parseSortField(sortBy, "priority", SORT_FIELDS);
-        Sort.Direction direction = parseSortDirection(sortDirection);
-        Sort sortObj = Sort.by(direction, sortField);
+    }
 
-        Pageable pageable = PageRequest.of(parsePage(page), parseSize(size), sortObj);
-
-        TicketSearchRequest searchRequest = new TicketSearchRequest();
-        searchRequest.setStatus(status);
-        searchRequest.setPriority(priority);
-        searchRequest.setAssigneeId(assigneeId);
-        searchRequest.setDueBefore(dueBefore);
-        searchRequest.setDueAfter(dueAfter);
-        searchRequest.setTitleContains(titleContains);
-
-        Page<Ticket> ticketPage = ticketRepository.findAll(buildSpecification(searchRequest), pageable);
-
-        return ticketPage.map(ticketMapper::toDto);
+    private TicketSearchRequest buildSearchRequest(
+            TicketStatus status,
+            Priority priority,
+            Long assigneeId,
+            LocalDate dueBefore,
+            LocalDate dueAfter,
+            String titleContains
+    ) {
+        TicketSearchRequest request = new TicketSearchRequest();
+        request.setStatus(status);
+        request.setPriority(priority);
+        request.setAssigneeId(assigneeId);
+        request.setDueBefore(dueBefore);
+        request.setDueAfter(dueAfter);
+        request.setTitleContains(titleContains);
+        return request;
     }
 
     private Specification<Ticket> buildSpecification(TicketSearchRequest searchRequest) {
