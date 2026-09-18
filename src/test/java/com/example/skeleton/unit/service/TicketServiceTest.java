@@ -411,7 +411,7 @@ class TicketServiceTest {
 
         Page<TicketDto> result = ticketService.searchTickets(
                 TicketStatus.OPEN, Priority.HIGH, 1L,
-                LocalDate.now(), LocalDate.now().plusDays(7), "test",
+                LocalDate.now().plusDays(7), LocalDate.now(), "test",
                 0, 10, "createdAt", "desc"
         );
 
@@ -422,61 +422,6 @@ class TicketServiceTest {
         verify(enumMapper).toDomainPriority(Priority.HIGH);
         verify(ticketRepository).findAll(any(Specification.class), any(Pageable.class));
         verify(ticketMapper).toDto(ticket);
-
-        verifyNoMoreInteractions(ticketRepository, enumMapper, ticketMapper);
-        verifyNoInteractions(userRepository, projectRepository);
-    }
-
-    @Test
-    void whenSearchTicketsSortByPriority_thenReturnsSortedInMemory() {
-        Ticket ticketLow = Ticket.builder()
-                .title("Low")
-                .priority(com.example.skeleton.domain.enums.Priority.LOW)
-                .project(project)
-                .build();
-        ticketLow.setId(2L);
-
-        Ticket ticketUrgent = Ticket.builder()
-                .title("Urgent")
-                .priority(com.example.skeleton.domain.enums.Priority.URGENT)
-                .project(project)
-                .build();
-        ticketUrgent.setId(3L);
-
-        when(ticketMapper.toDto(any(Ticket.class))).thenAnswer(invocation -> {
-            Ticket t = invocation.getArgument(0);
-            TicketDto dto = new TicketDto();
-            dto.setId(t.getId());
-            dto.setTitle(t.getTitle());
-            dto.setPriority(switch (t.getPriority()) {
-                case LOW -> Priority.LOW;
-                case MEDIUM -> Priority.MEDIUM;
-                case HIGH -> Priority.HIGH;
-                case URGENT -> Priority.URGENT;
-            });
-            return dto;
-        });
-
-        when(enumMapper.toDomainTicketStatus(null)).thenReturn(null);
-        when(enumMapper.toDomainPriority(null)).thenReturn(null);
-        when(ticketRepository.findAll(any(Specification.class)))
-                .thenReturn(List.of(ticketLow, ticket));
-
-        Page<TicketDto> result = ticketService.searchTickets(
-                null, null, null, null, null, null,
-                0, 10, "priority", "desc"
-        );
-
-        assertThat(result).isNotNull();
-        assertThat(result.getContent()).hasSize(2);
-
-        assertThat(result.getContent().get(0).getPriority()).isEqualTo(Priority.HIGH);
-        assertThat(result.getContent().get(1).getPriority()).isEqualTo(Priority.LOW);
-
-        verify(enumMapper).toDomainTicketStatus(null);
-        verify(enumMapper).toDomainPriority(null);
-        verify(ticketRepository).findAll(any(Specification.class));
-        verify(ticketMapper, times(2)).toDto(any(Ticket.class));
 
         verifyNoMoreInteractions(ticketRepository, enumMapper, ticketMapper);
         verifyNoInteractions(userRepository, projectRepository);

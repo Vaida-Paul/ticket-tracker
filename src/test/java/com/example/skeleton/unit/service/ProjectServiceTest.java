@@ -6,6 +6,7 @@ import com.example.skeleton.exception.ProjectNotFoundException;
 import com.example.skeleton.exception.UserNotFoundException;
 import com.example.skeleton.mapper.ProjectMapper;
 import com.example.skeleton.repository.ProjectRepository;
+import com.example.skeleton.repository.TicketRepository;
 import com.example.skeleton.repository.UserRepository;
 import com.example.skeleton.service.implementation.ProjectServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,9 @@ class ProjectServiceTest {
 
     @InjectMocks
     private ProjectServiceImpl projectService;
+
+    @Mock
+    private TicketRepository ticketRepository;
 
     private User user;
     private Project project;

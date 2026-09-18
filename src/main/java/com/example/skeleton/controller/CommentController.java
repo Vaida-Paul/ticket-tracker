@@ -22,6 +22,7 @@ public class CommentController implements CommentsApi {
 
     private final CommentService commentService;
 
+    // TODO: replace with authenticated user once security is implemented
     private static final Long DEFAULT_USER_ID = 1L;
 
     @Override
@@ -37,7 +38,7 @@ public class CommentController implements CommentsApi {
 
     @Override
     public ResponseEntity<Void> deleteComment(Long ticketId, Long commentId) {
-        commentService.deleteComment(commentId);
+        commentService.deleteComment(ticketId, commentId);
         return ResponseEntity.noContent().build();
     }
 }

@@ -186,12 +186,12 @@ class CommentControllerTest {
     void whenDeleteComment_thenReturns204() throws Exception {
         Long ticketId = 1L;
         Long commentId = 1L;
-        doNothing().when(commentService).deleteComment(commentId);
+        doNothing().when(commentService).deleteComment(ticketId,commentId);
 
         mockMvc.perform(delete("/api/v1/tickets/{ticketId}/comments/{commentId}", ticketId, commentId))
                 .andExpect(status().isNoContent());
 
-        verify(commentService).deleteComment(commentId);
+        verify(commentService).deleteComment(ticketId, commentId);
         verifyNoMoreInteractions(commentService);
     }
 
@@ -200,14 +200,14 @@ class CommentControllerTest {
         Long ticketId = 1L;
         Long commentId = 99999L;
         doThrow(new CommentNotFoundException(commentId))
-                .when(commentService).deleteComment(commentId);
+                .when(commentService).deleteComment(ticketId,commentId);
 
         mockMvc.perform(delete("/api/v1/tickets/{ticketId}/comments/{commentId}", ticketId, commentId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Comment with id 99999 not found"));
 
-        verify(commentService).deleteComment(commentId);
+        verify(commentService).deleteComment(ticketId,commentId);
         verifyNoMoreInteractions(commentService);
     }
 }

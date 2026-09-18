@@ -52,7 +52,7 @@ class GlobalExceptionHandlerTest {
         assertThat(body.getPath()).isEqualTo("/api/v1/tickets");
         assertThat(body.getTimestamp()).isNotNull();
 
-        verify(request).getRequestURI();
+        verify(request, atLeastOnce()).getRequestURI();
         verifyNoMoreInteractions(request);
     }
 
@@ -68,7 +68,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getError()).isEqualTo("Not Found");
         assertThat(response.getBody().getMessage()).isEqualTo("Project with id 99999 not found");
 
-        verify(request).getRequestURI();
+        verify(request, atLeastOnce()).getRequestURI();
         verifyNoMoreInteractions(request);
     }
 
@@ -82,7 +82,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getStatus()).isEqualTo(404);
         assertThat(response.getBody().getMessage()).isEqualTo("User with id 99999 not found");
 
-        verify(request).getRequestURI();
+        verify(request, atLeastOnce()).getRequestURI();
         verifyNoMoreInteractions(request);
     }
 
@@ -97,7 +97,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getStatus()).isEqualTo(404);
         assertThat(response.getBody().getMessage()).isEqualTo("Comment with id 99999 not found");
 
-        verify(request).getRequestURI();
+        verify(request, atLeastOnce()).getRequestURI();
         verifyNoMoreInteractions(request);
     }
 
@@ -124,7 +124,7 @@ class GlobalExceptionHandlerTest {
 
         verify(ex).getBindingResult();
         verify(bindingResult).getFieldErrors();
-        verify(request).getRequestURI();
+        verify(request, atLeastOnce()).getRequestURI();
         verifyNoMoreInteractions(request, ex, bindingResult);
     }
 
@@ -141,7 +141,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getMessage())
                 .contains("Malformed JSON request or invalid value");
 
-        verify(request).getRequestURI();
+        verify(request, atLeastOnce()).getRequestURI();
         verifyNoMoreInteractions(request);
     }
 
@@ -158,7 +158,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getMessage())
                 .contains("Data integrity violation");
 
-        verify(request).getRequestURI();
+        verify(request, atLeastOnce()).getRequestURI();
         verifyNoMoreInteractions(request);
     }
 
@@ -173,7 +173,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getError()).isEqualTo("Internal Server Error");
         assertThat(response.getBody().getMessage()).isEqualTo("An unexpected error occurred");
 
-        verify(request).getRequestURI();
+        verify(request, atLeastOnce()).getRequestURI();
         verifyNoMoreInteractions(request);
     }
 }

@@ -7,10 +7,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.openapitools.model.CommentCreateRequest;
 import org.openapitools.model.CommentDto;
 
-@Mapper(
-        componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
-)
+@Mapper(componentModel = "spring")
 public interface CommentMapper {
 
     @Mapping(source = "author.id", target = "authorId")

@@ -183,6 +183,8 @@ public class TicketServiceImpl implements TicketService {
     @Override
     @Transactional
     public void deleteTicket(Long id) {
+        log.info("Deleting ticket id: {}", id);
+
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException(id));
         ticketRepository.delete(ticket);

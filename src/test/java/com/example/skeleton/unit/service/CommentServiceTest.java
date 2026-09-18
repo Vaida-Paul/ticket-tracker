@@ -205,7 +205,7 @@ class CommentServiceTest {
         when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
         doNothing().when(commentRepository).delete(comment);
 
-        commentService.deleteComment(1L);
+        commentService.deleteComment(1L,1L);
 
         verify(commentRepository).findById(1L);
         verify(commentRepository).delete(comment);
@@ -218,7 +218,7 @@ class CommentServiceTest {
     void whenDeleteNonExistentComment_thenThrowsException() {
         when(commentRepository.findById(99999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> commentService.deleteComment(99999L))
+        assertThatThrownBy(() -> commentService.deleteComment(1L,99999L))
                 .isInstanceOf(CommentNotFoundException.class)
                 .hasMessageContaining("99999");
 

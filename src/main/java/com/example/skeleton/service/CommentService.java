@@ -32,8 +32,9 @@ public interface CommentService {
     /**
      * Deletes a comment by its ID.
      *
+     * @param ticketId the ID of the ticket
      * @param commentId the ID of the comment to delete
      * @throws com.example.skeleton.exception.CommentNotFoundException if the comment does not exist
      */
-    void deleteComment(Long commentId);
+    void deleteComment(Long ticketId, Long commentId);
 }

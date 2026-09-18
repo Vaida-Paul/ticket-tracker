@@ -7,15 +7,9 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.openapitools.model.ProjectCreateRequest;
 import org.openapitools.model.ProjectDto;
 
-@Mapper(
-        componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
-)
+@Mapper(componentModel = "spring")
 public interface ProjectMapper {
 
-    @Mapping(source = "createdBy.id", target = "createdBy.id")
-    @Mapping(source = "createdBy.email", target = "createdBy.email")
-    @Mapping(source = "createdBy.fullName", target = "createdBy.fullName")
     ProjectDto toDto(Project project);
 
     @Mapping(target = "id", ignore = true)

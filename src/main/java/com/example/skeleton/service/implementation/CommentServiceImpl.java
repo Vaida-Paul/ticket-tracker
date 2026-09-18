@@ -60,10 +60,16 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public void deleteComment(Long commentId) {
-        log.info("Deleting comment id: {}", commentId);
+    public void deleteComment(Long ticketId, Long commentId) {
+        log.info("Deleting comment id: {} from ticket id: {}", commentId, ticketId);
+
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommentNotFoundException(commentId));
+
+        if (!comment.getTicket().getId().equals(ticketId)) {
+            throw new CommentNotFoundException(commentId);
+        }
+
         commentRepository.delete(comment);
     }
 }
