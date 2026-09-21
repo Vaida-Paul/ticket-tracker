@@ -1,18 +1,16 @@
 package com.example.skeleton.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.ErrorResponse;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
@@ -30,7 +28,10 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
 
-        log.warn("Validation failed at {}: {}", request.getRequestURI(), message);
+        log.warn("[VALIDATION ERROR] {} {} - {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                message);
 
         return buildErrorResponse(
                 message,
@@ -45,7 +46,28 @@ public class GlobalExceptionHandler {
             InvalidRequestException ex,
             HttpServletRequest request) {
 
-        log.warn("Bad request at {}: {}", request.getRequestURI(), ex.getMessage());
+        log.warn("[BAD REQUEST] {} {} - {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage());
+
+        return buildErrorResponse(
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST,
+                "Bad Request",
+                request
+        );
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex,
+            HttpServletRequest request) {
+
+        log.warn("[BAD REQUEST] {} {} - {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage());
 
         return buildErrorResponse(
                 ex.getMessage(),
@@ -60,7 +82,10 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException ex,
             HttpServletRequest request) {
 
-        log.warn("Malformed request at {}", request.getRequestURI(), ex);
+        log.warn("[MALFORMED REQUEST] {} {} - {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage());
 
         return buildErrorResponse(
                 "Malformed JSON request or invalid value. Check enum values and JSON format.",
@@ -75,7 +100,10 @@ public class GlobalExceptionHandler {
             TicketNotFoundException ex,
             HttpServletRequest request) {
 
-        log.warn("Ticket not found at {}: {}", request.getRequestURI(), ex.getMessage());
+        log.warn("[NOT FOUND] {} {} - {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage());
 
         return buildErrorResponse(
                 ex.getMessage(),
@@ -90,7 +118,10 @@ public class GlobalExceptionHandler {
             ProjectNotFoundException ex,
             HttpServletRequest request) {
 
-        log.warn("Project not found at {}: {}", request.getRequestURI(), ex.getMessage());
+        log.warn("[NOT FOUND] {} {} - {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage());
 
         return buildErrorResponse(
                 ex.getMessage(),
@@ -105,7 +136,10 @@ public class GlobalExceptionHandler {
             UserNotFoundException ex,
             HttpServletRequest request) {
 
-        log.warn("User not found at {}: {}", request.getRequestURI(), ex.getMessage());
+        log.warn("[NOT FOUND] {} {} - {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage());
 
         return buildErrorResponse(
                 ex.getMessage(),
@@ -120,7 +154,10 @@ public class GlobalExceptionHandler {
             CommentNotFoundException ex,
             HttpServletRequest request) {
 
-        log.warn("Comment not found at {}: {}", request.getRequestURI(), ex.getMessage());
+        log.warn("[NOT FOUND] {} {} - {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage());
 
         return buildErrorResponse(
                 ex.getMessage(),
@@ -135,7 +172,11 @@ public class GlobalExceptionHandler {
             DataIntegrityViolationException ex,
             HttpServletRequest request) {
 
-        log.warn("Data integrity violation at {}", request.getRequestURI(), ex);
+        log.error("[DATA INTEGRITY] {} {} - {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage(),
+                ex);
 
         return buildErrorResponse(
                 "Data integrity violation. Check foreign keys and unique constraints.",
@@ -145,12 +186,29 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex,
+            HttpServletRequest request) {
+        log.warn("[METHOD NOT ALLOWED] {} {} - {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return buildErrorResponse(
+                "Method " + request.getMethod() + " is not supported for this endpoint",
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Method Not Allowed",
+                request
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex,
             HttpServletRequest request) {
 
-        log.error("Unhandled exception at {}", request.getRequestURI(), ex);
+        log.error("[UNEXPECTED ERROR] {} {} - {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage(),
+                ex);
 
         return buildErrorResponse(
                 "An unexpected error occurred",

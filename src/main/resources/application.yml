@@ -1,11 +1,35 @@
 spring:
+  application:
+    name: ticket-tracker
   datasource:
     url: jdbc:postgresql://localhost:5432/ticket_tracker
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   profiles:
     active: dev
-
   jpa:
     hibernate:
       ddl-auto: validate
+
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    com.example.skeleton: INFO
+    org.hibernate.SQL: WARN
+
+app:
+  environment: ${SPRING_PROFILES_ACTIVE:local}
+  logging:
+    file-path: ${LOG_PATH:logs}
+    file-name: ${LOG_FILE_NAME:ticket-tracker}
+    archive-path: ${LOG_ARCHIVE_PATH:logs/archive}
+    max-file-size: ${LOG_MAX_FILE_SIZE:100MB}
+    max-history: ${LOG_MAX_HISTORY:30}
+    total-size-cap: ${LOG_TOTAL_SIZE_CAP:1GB}
+    slow-threshold-ms: ${SLOW_THRESHOLD_MS:500}
+
+security:
+  permit-all-api: false
+
+server:
+  port: 8080

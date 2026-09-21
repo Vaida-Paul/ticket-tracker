@@ -1,2 +1,7 @@
 security:
   permit-all-api: false
+
+logging:
+  level:
+    com.example.skeleton: INFO
+    org.hibernate.SQL: WARN

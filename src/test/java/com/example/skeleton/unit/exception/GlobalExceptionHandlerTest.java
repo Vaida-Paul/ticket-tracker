@@ -33,8 +33,8 @@ class GlobalExceptionHandlerTest {
     void setUp() {
         handler = new GlobalExceptionHandler();
         when(request.getRequestURI()).thenReturn("/api/v1/tickets");
+        when(request.getMethod()).thenReturn("GET");   // <-- adaugă asta
     }
-
 
     @Test
     void whenTicketNotFound_thenReturns404() {
