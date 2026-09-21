@@ -1,35 +1,29 @@
 package com.example.skeleton.integration.controller;
 
+import com.example.skeleton.controller.ProjectController;
 import com.example.skeleton.exception.ProjectNotFoundException;
 import com.example.skeleton.exception.UserNotFoundException;
 import com.example.skeleton.service.ProjectService;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.openapitools.model.*;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.flyway.enabled=false"
-})
-@AutoConfigureMockMvc
+@WebMvcTest(ProjectController.class)
+@ActiveProfiles("test")
 class ProjectControllerTest {
 
     @Autowired
@@ -48,7 +42,9 @@ class ProjectControllerTest {
         org.springframework.data.domain.Page<ProjectDto> mockPage =
                 new org.springframework.data.domain.PageImpl<>(List.of(dto));
 
-        when(projectService.getAllProjects(any(), any(), any(), any())).thenReturn(mockPage);
+        when(projectService.getAllProjects(
+                eq(0), eq(10), eq("createdAt"), eq("desc")
+        )).thenReturn(mockPage);
 
         mockMvc.perform(get("/api/v1/projects")
                         .param("page", "0")
@@ -61,7 +57,9 @@ class ProjectControllerTest {
                 .andExpect(jsonPath("$.page").value(0))
                 .andExpect(jsonPath("$.size").value(1));
 
-        verify(projectService).getAllProjects(any(), any(), any(), any());
+        verify(projectService).getAllProjects(
+                eq(0), eq(10), eq("createdAt"), eq("desc")
+        );
         verifyNoMoreInteractions(projectService);
     }
 
@@ -70,7 +68,9 @@ class ProjectControllerTest {
         org.springframework.data.domain.Page<ProjectDto> emptyPage =
                 new org.springframework.data.domain.PageImpl<>(List.of());
 
-        when(projectService.getAllProjects(any(), any(), any(), any())).thenReturn(emptyPage);
+        when(projectService.getAllProjects(
+                eq(0), eq(20), eq("createdAt"), eq("desc")
+        )).thenReturn(emptyPage);
 
         mockMvc.perform(get("/api/v1/projects")
                         .accept(MediaType.APPLICATION_JSON))
@@ -79,7 +79,9 @@ class ProjectControllerTest {
                 .andExpect(jsonPath("$.content.length()").value(0))
                 .andExpect(jsonPath("$.totalElements").value(0));
 
-        verify(projectService).getAllProjects(any(), any(), any(), any());
+        verify(projectService).getAllProjects(
+                eq(0), eq(20), eq("createdAt"), eq("desc")
+        );
         verifyNoMoreInteractions(projectService);
     }
 
@@ -88,7 +90,9 @@ class ProjectControllerTest {
         org.springframework.data.domain.Page<ProjectDto> emptyPage =
                 new org.springframework.data.domain.PageImpl<>(List.of());
 
-        when(projectService.getAllProjects(any(), any(), any(), any())).thenReturn(emptyPage);
+        when(projectService.getAllProjects(
+                eq(0), eq(10), eq("name"), eq("asc")
+        )).thenReturn(emptyPage);
 
         mockMvc.perform(get("/api/v1/projects")
                         .param("page", "0")
@@ -98,7 +102,9 @@ class ProjectControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        verify(projectService).getAllProjects(any(), any(), any(), any());
+        verify(projectService).getAllProjects(
+                eq(0), eq(10), eq("name"), eq("asc")
+        );
         verifyNoMoreInteractions(projectService);
     }
 
@@ -157,7 +163,8 @@ class ProjectControllerTest {
         expectedResponse.setName("New Project");
         expectedResponse.setDescription("New Description");
 
-        when(projectService.createProject(any(ProjectCreateRequest.class)))
+        ArgumentCaptor<ProjectCreateRequest> captor = ArgumentCaptor.forClass(ProjectCreateRequest.class);
+        when(projectService.createProject(captor.capture()))
                 .thenReturn(expectedResponse);
 
         mockMvc.perform(post("/api/v1/projects")
@@ -169,7 +176,13 @@ class ProjectControllerTest {
                 .andExpect(jsonPath("$.name").value("New Project"))
                 .andExpect(jsonPath("$.description").value("New Description"));
 
-        verify(projectService).createProject(any(ProjectCreateRequest.class));
+        verify(projectService).createProject(captor.capture());
+
+        ProjectCreateRequest captured = captor.getValue();
+        assertThat(captured.getName()).isEqualTo("New Project");
+        assertThat(captured.getDescription()).isEqualTo("New Description");
+        assertThat(captured.getCreatedById()).isEqualTo(1L);
+
         verifyNoMoreInteractions(projectService);
     }
 
@@ -241,7 +254,8 @@ class ProjectControllerTest {
                 }
                 """;
 
-        when(projectService.createProject(any(ProjectCreateRequest.class)))
+        ArgumentCaptor<ProjectCreateRequest> captor = ArgumentCaptor.forClass(ProjectCreateRequest.class);
+        when(projectService.createProject(captor.capture()))
                 .thenThrow(new UserNotFoundException(99999L));
 
         mockMvc.perform(post("/api/v1/projects")
@@ -251,7 +265,11 @@ class ProjectControllerTest {
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("User with id 99999 not found"));
 
-        verify(projectService).createProject(any(ProjectCreateRequest.class));
+        verify(projectService).createProject(captor.capture());
+
+        ProjectCreateRequest captured = captor.getValue();
+        assertThat(captured.getCreatedById()).isEqualTo(99999L);
+
         verifyNoMoreInteractions(projectService);
     }
 

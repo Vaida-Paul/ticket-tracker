@@ -24,6 +24,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Set;
 
 import static com.example.skeleton.utils.RequestValidationUtils.*;
@@ -41,6 +42,10 @@ public class TicketServiceImpl implements TicketService {
     private static final Set<String> SORT_FIELDS =
             Set.of("priority", "dueDate", "createdAt", "updatedAt", "title", "status");
 
+    private static final Map<String, String> SORT_ALIASES = Map.of(
+            "priority", "priorityOrder"
+    );
+
     @Override
     @Transactional(readOnly = true)
     public Page<TicketDto> searchTickets(
@@ -57,7 +62,7 @@ public class TicketServiceImpl implements TicketService {
     ) {
         validateDueDateRange(dueBefore, dueAfter);
 
-        Pageable pageable = buildPageable(page, size, sortBy, "priority", sortDirection, SORT_FIELDS);
+        Pageable pageable = buildPageable(page, size, sortBy, "priority", sortDirection, SORT_FIELDS, SORT_ALIASES);
         TicketSearchRequest searchRequest = buildSearchRequest(
                 status, priority, assigneeId, dueBefore, dueAfter, titleContains);
 

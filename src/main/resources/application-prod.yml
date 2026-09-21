@@ -1,0 +1,2 @@
+security:
+  permit-all-api: false

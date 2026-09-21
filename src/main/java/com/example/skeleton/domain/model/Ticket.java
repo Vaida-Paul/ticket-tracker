@@ -6,6 +6,7 @@ import com.example.skeleton.domain.enums.TicketStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
@@ -34,9 +35,17 @@ public class Ticket {
     @Column(nullable = false)
     private TicketStatus status;
 
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Priority priority;
+
+    @Formula("CASE priority " +
+            "WHEN 'LOW' THEN 1 " +
+            "WHEN 'MEDIUM' THEN 2 " +
+            "WHEN 'HIGH' THEN 3 " +
+            "WHEN 'URGENT' THEN 4 " +
+            "ELSE 99 END")
+    private Integer priorityOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)

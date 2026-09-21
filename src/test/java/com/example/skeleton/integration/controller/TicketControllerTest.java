@@ -1,35 +1,29 @@
 package com.example.skeleton.integration.controller;
 
+import com.example.skeleton.controller.TicketController;
 import com.example.skeleton.exception.ProjectNotFoundException;
 import com.example.skeleton.exception.TicketNotFoundException;
 import com.example.skeleton.service.TicketService;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.openapitools.model.*;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.flyway.enabled=false"
-})
-@AutoConfigureMockMvc
+@WebMvcTest(TicketController.class)
+@ActiveProfiles("test")
 class TicketControllerTest {
 
     @Autowired
@@ -93,8 +87,8 @@ class TicketControllerTest {
                 new org.springframework.data.domain.PageImpl<>(List.of(dto));
 
         when(ticketService.searchTickets(
-                any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any()
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                eq(0), eq(10), eq("priority"), eq("desc")
         )).thenReturn(mockPage);
 
         mockMvc.perform(get("/api/v1/tickets")
@@ -107,8 +101,8 @@ class TicketControllerTest {
                 .andExpect(jsonPath("$.totalElements").value(1));
 
         verify(ticketService).searchTickets(
-                any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any()
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                eq(0), eq(10), eq("priority"), eq("desc")
         );
         verifyNoMoreInteractions(ticketService);
     }
@@ -119,8 +113,8 @@ class TicketControllerTest {
                 new org.springframework.data.domain.PageImpl<>(List.of());
 
         when(ticketService.searchTickets(
-                any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any()
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                eq(0), eq(20), eq("priority"), eq("desc")
         )).thenReturn(emptyPage);
 
         mockMvc.perform(get("/api/v1/tickets")
@@ -130,8 +124,8 @@ class TicketControllerTest {
                 .andExpect(jsonPath("$.totalElements").value(0));
 
         verify(ticketService).searchTickets(
-                any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any()
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                eq(0), eq(20), eq("priority"), eq("desc")
         );
         verifyNoMoreInteractions(ticketService);
     }
@@ -154,7 +148,8 @@ class TicketControllerTest {
         expectedResponse.setPriority(Priority.HIGH);
         expectedResponse.setProjectId(1L);
 
-        when(ticketService.createTicket(any(TicketCreateRequest.class))).thenReturn(expectedResponse);
+        ArgumentCaptor<TicketCreateRequest> captor = ArgumentCaptor.forClass(TicketCreateRequest.class);
+        when(ticketService.createTicket(captor.capture())).thenReturn(expectedResponse);
 
         mockMvc.perform(post("/api/v1/tickets")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -166,7 +161,14 @@ class TicketControllerTest {
                 .andExpect(jsonPath("$.status").value("OPEN"))
                 .andExpect(jsonPath("$.priority").value("HIGH"));
 
-        verify(ticketService).createTicket(any(TicketCreateRequest.class));
+        verify(ticketService).createTicket(captor.capture());
+
+        TicketCreateRequest captured = captor.getValue();
+        assertThat(captured.getTitle()).isEqualTo("New Ticket");
+        assertThat(captured.getDescription()).isEqualTo("New Description");
+        assertThat(captured.getPriority()).isEqualTo(Priority.HIGH);
+        assertThat(captured.getProjectId()).isEqualTo(1L);
+
         verifyNoMoreInteractions(ticketService);
     }
 
@@ -237,7 +239,8 @@ class TicketControllerTest {
                 }
                 """;
 
-        when(ticketService.createTicket(any(TicketCreateRequest.class)))
+        ArgumentCaptor<TicketCreateRequest> captor = ArgumentCaptor.forClass(TicketCreateRequest.class);
+        when(ticketService.createTicket(captor.capture()))
                 .thenThrow(new ProjectNotFoundException(99999L));
 
         mockMvc.perform(post("/api/v1/tickets")
@@ -246,7 +249,11 @@ class TicketControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Project with id 99999 not found"));
 
-        verify(ticketService).createTicket(any(TicketCreateRequest.class));
+        verify(ticketService).createTicket(captor.capture());
+
+        TicketCreateRequest captured = captor.getValue();
+        assertThat(captured.getProjectId()).isEqualTo(99999L);
+
         verifyNoMoreInteractions(ticketService);
     }
 
@@ -268,7 +275,8 @@ class TicketControllerTest {
         expectedResponse.setPriority(Priority.URGENT);
         expectedResponse.setProjectId(1L);
 
-        when(ticketService.updateTicket(eq(ticketId), any(TicketPutRequest.class)))
+        ArgumentCaptor<TicketPutRequest> captor = ArgumentCaptor.forClass(TicketPutRequest.class);
+        when(ticketService.updateTicket(eq(ticketId), captor.capture()))
                 .thenReturn(expectedResponse);
 
         mockMvc.perform(put("/api/v1/tickets/{id}", ticketId)
@@ -280,7 +288,13 @@ class TicketControllerTest {
                 .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
                 .andExpect(jsonPath("$.priority").value("URGENT"));
 
-        verify(ticketService).updateTicket(eq(ticketId), any(TicketPutRequest.class));
+        verify(ticketService).updateTicket(eq(ticketId), captor.capture());
+
+        TicketPutRequest captured = captor.getValue();
+        assertThat(captured.getTitle()).isEqualTo("Updated Ticket");
+        assertThat(captured.getStatus()).isEqualTo(TicketStatus.IN_PROGRESS);
+        assertThat(captured.getPriority()).isEqualTo(Priority.URGENT);
+
         verifyNoMoreInteractions(ticketService);
     }
 
@@ -314,7 +328,8 @@ class TicketControllerTest {
                 }
                 """;
 
-        when(ticketService.updateTicket(eq(ticketId), any(TicketPutRequest.class)))
+        ArgumentCaptor<TicketPutRequest> captor = ArgumentCaptor.forClass(TicketPutRequest.class);
+        when(ticketService.updateTicket(eq(ticketId), captor.capture()))
                 .thenThrow(new TicketNotFoundException(ticketId));
 
         mockMvc.perform(put("/api/v1/tickets/{id}", ticketId)
@@ -323,7 +338,12 @@ class TicketControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"));
 
-        verify(ticketService).updateTicket(eq(ticketId), any(TicketPutRequest.class));
+        verify(ticketService).updateTicket(eq(ticketId), captor.capture());
+
+        TicketPutRequest captured = captor.getValue();
+        assertThat(captured.getTitle()).isEqualTo("Updated Ticket");
+        assertThat(captured.getStatus()).isEqualTo(TicketStatus.IN_PROGRESS);
+
         verifyNoMoreInteractions(ticketService);
     }
 
@@ -343,7 +363,8 @@ class TicketControllerTest {
         expectedResponse.setPriority(Priority.HIGH);
         expectedResponse.setProjectId(1L);
 
-        when(ticketService.partialUpdateTicket(eq(ticketId), any(TicketPatchRequest.class)))
+        ArgumentCaptor<TicketPatchRequest> captor = ArgumentCaptor.forClass(TicketPatchRequest.class);
+        when(ticketService.partialUpdateTicket(eq(ticketId), captor.capture()))
                 .thenReturn(expectedResponse);
 
         mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
@@ -354,7 +375,11 @@ class TicketControllerTest {
                 .andExpect(jsonPath("$.status").value("DONE"))
                 .andExpect(jsonPath("$.title").value("Test Ticket"));
 
-        verify(ticketService).partialUpdateTicket(eq(ticketId), any(TicketPatchRequest.class));
+        verify(ticketService).partialUpdateTicket(eq(ticketId), captor.capture());
+
+        TicketPatchRequest captured = captor.getValue();
+        assertThat(captured.getStatus()).isEqualTo(TicketStatus.DONE);
+
         verifyNoMoreInteractions(ticketService);
     }
 
@@ -367,7 +392,8 @@ class TicketControllerTest {
                 }
                 """;
 
-        when(ticketService.partialUpdateTicket(eq(ticketId), any(TicketPatchRequest.class)))
+        ArgumentCaptor<TicketPatchRequest> captor = ArgumentCaptor.forClass(TicketPatchRequest.class);
+        when(ticketService.partialUpdateTicket(eq(ticketId), captor.capture()))
                 .thenThrow(new TicketNotFoundException(ticketId));
 
         mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
@@ -376,7 +402,237 @@ class TicketControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"));
 
-        verify(ticketService).partialUpdateTicket(eq(ticketId), any(TicketPatchRequest.class));
+        verify(ticketService).partialUpdateTicket(eq(ticketId), captor.capture());
+
+        TicketPatchRequest captured = captor.getValue();
+        assertThat(captured.getStatus()).isEqualTo(TicketStatus.DONE);
+
+        verifyNoMoreInteractions(ticketService);
+    }
+
+    @Test
+    void whenPatchTicketWithDescription_thenDescriptionIsPresentWithValue() throws Exception {
+        Long ticketId = 1L;
+        String requestBody = """
+                {
+                    "description": "Updated description"
+                }
+                """;
+        TicketDto expectedResponse = new TicketDto();
+        expectedResponse.setId(ticketId);
+        expectedResponse.setTitle("Test Ticket");
+        expectedResponse.setStatus(TicketStatus.OPEN);
+        expectedResponse.setPriority(Priority.HIGH);
+        expectedResponse.setDescription("Updated description");
+        expectedResponse.setProjectId(1L);
+
+        ArgumentCaptor<TicketPatchRequest> captor = ArgumentCaptor.forClass(TicketPatchRequest.class);
+        when(ticketService.partialUpdateTicket(eq(ticketId), captor.capture())).thenReturn(expectedResponse);
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestBody)
+                    .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.description").value("Updated description"));
+        verify(ticketService).partialUpdateTicket(eq(ticketId), captor.capture());
+
+        TicketPatchRequest captured = captor.getValue();
+        assertThat(captured.getDescription().isPresent()).isTrue();
+        assertThat(captured.getDescription().get()).isEqualTo("Updated description");
+
+        verifyNoMoreInteractions(ticketService);
+    }
+
+    @Test
+    void whenPatchTicketWithNullDescription_thenDescriptionIsPresentWithNull() throws Exception {
+        Long ticketId = 1L;
+        String requestBody = """
+                {
+                    "description": null
+                }
+                """;
+        TicketDto expectedResponse = new TicketDto();
+        expectedResponse.setId(ticketId);
+        expectedResponse.setTitle("Test Ticket");
+        expectedResponse.setStatus(TicketStatus.OPEN);
+        expectedResponse.setPriority(Priority.HIGH);
+        expectedResponse.setProjectId(1L);
+
+        ArgumentCaptor<TicketPatchRequest> captor = ArgumentCaptor.forClass(TicketPatchRequest.class);
+        when(ticketService.partialUpdateTicket(eq(ticketId), captor.capture())).thenReturn(expectedResponse);
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestBody)
+                    .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(ticketService).partialUpdateTicket(eq(ticketId), captor.capture());
+
+        TicketPatchRequest captured = captor.getValue();
+        assertThat(captured.getDescription().isPresent()).isTrue();
+        assertThat(captured.getDescription().get()).isNull();
+
+        verifyNoMoreInteractions(ticketService);
+    }
+
+    @Test
+    void whenPatchTicketWithoutDescription_thenDescriptionIsUndefined() throws Exception {
+        Long ticketId = 1L;
+        String requestBody = """
+            {
+                "title": "Only title changed"
+            }
+            """;
+
+        TicketDto expectedResponse = new TicketDto();
+        expectedResponse.setId(ticketId);
+        expectedResponse.setTitle("Only title changed");
+        expectedResponse.setStatus(TicketStatus.OPEN);
+        expectedResponse.setPriority(Priority.HIGH);
+        expectedResponse.setProjectId(1L);
+
+        ArgumentCaptor<TicketPatchRequest> captor = ArgumentCaptor.forClass(TicketPatchRequest.class);
+        when(ticketService.partialUpdateTicket(eq(ticketId), captor.capture()))
+                .thenReturn(expectedResponse);
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(ticketService).partialUpdateTicket(eq(ticketId), captor.capture());
+
+        TicketPatchRequest captured = captor.getValue();
+        assertThat(captured.getDescription().isPresent()).isFalse();
+        assertThat(captured.getDueDate().isPresent()).isFalse();
+        assertThat(captured.getAssigneeId().isPresent()).isFalse();
+
+        verifyNoMoreInteractions(ticketService);
+    }
+
+    @Test
+    void whenPatchTicketWithAllJsonNullableFields_thenAllCapturedWithValues() throws Exception {
+        Long ticketId = 1L;
+        String requestBody = """
+            {
+                "description": "New description",
+                "dueDate": "2026-12-31T23:59:59Z",
+                "assigneeId": 5
+            }
+            """;
+
+        TicketDto expectedResponse = new TicketDto();
+        expectedResponse.setId(ticketId);
+        expectedResponse.setTitle("Test Ticket");
+        expectedResponse.setStatus(TicketStatus.OPEN);
+        expectedResponse.setPriority(Priority.HIGH);
+        expectedResponse.setProjectId(1L);
+
+        ArgumentCaptor<TicketPatchRequest> captor = ArgumentCaptor.forClass(TicketPatchRequest.class);
+        when(ticketService.partialUpdateTicket(eq(ticketId), captor.capture()))
+                .thenReturn(expectedResponse);
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(ticketService).partialUpdateTicket(eq(ticketId), captor.capture());
+
+        TicketPatchRequest captured = captor.getValue();
+
+        assertThat(captured.getDescription().isPresent()).isTrue();
+        assertThat(captured.getDescription().get()).isEqualTo("New description");
+
+        assertThat(captured.getDueDate().isPresent()).isTrue();
+        assertThat(captured.getDueDate().get()).isNotNull();
+
+        assertThat(captured.getAssigneeId().isPresent()).isTrue();
+        assertThat(captured.getAssigneeId().get()).isEqualTo(5L);
+
+        verifyNoMoreInteractions(ticketService);
+    }
+
+    @Test
+    void whenPatchTicketWithExplicitNullsForJsonNullableFields_thenAllPresentWithNull() throws Exception {
+        Long ticketId = 1L;
+        String requestBody = """
+            {
+                "description": null,
+                "dueDate": null,
+                "assigneeId": null
+            }
+            """;
+
+        TicketDto expectedResponse = new TicketDto();
+        expectedResponse.setId(ticketId);
+        expectedResponse.setTitle("Test Ticket");
+        expectedResponse.setStatus(TicketStatus.OPEN);
+        expectedResponse.setPriority(Priority.HIGH);
+        expectedResponse.setProjectId(1L);
+
+        ArgumentCaptor<TicketPatchRequest> captor = ArgumentCaptor.forClass(TicketPatchRequest.class);
+        when(ticketService.partialUpdateTicket(eq(ticketId), captor.capture()))
+                .thenReturn(expectedResponse);
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(ticketService).partialUpdateTicket(eq(ticketId), captor.capture());
+
+        TicketPatchRequest captured = captor.getValue();
+
+        assertThat(captured.getDescription().isPresent()).isTrue();
+        assertThat(captured.getDescription().get()).isNull();
+
+        assertThat(captured.getDueDate().isPresent()).isTrue();
+        assertThat(captured.getDueDate().get()).isNull();
+
+        assertThat(captured.getAssigneeId().isPresent()).isTrue();
+        assertThat(captured.getAssigneeId().get()).isNull();
+
+        verifyNoMoreInteractions(ticketService);
+    }
+
+    @Test
+    void whenPatchTicketWithNullAssigneeId_thenAssigneeIdIsPresentWithNull() throws Exception {
+        Long ticketId = 1L;
+        String requestBody = """
+                {
+                    "assigneeId": null
+                }
+                """;
+
+        TicketDto expectedResponse = new TicketDto();
+        expectedResponse.setId(ticketId);
+        expectedResponse.setTitle("Test Ticket");
+        expectedResponse.setStatus(TicketStatus.OPEN);
+        expectedResponse.setPriority(Priority.HIGH);
+        expectedResponse.setProjectId(1L);
+
+        ArgumentCaptor<TicketPatchRequest> captor = ArgumentCaptor.forClass(TicketPatchRequest.class);
+        when(ticketService.partialUpdateTicket(eq(ticketId), captor.capture()))
+                .thenReturn(expectedResponse);
+
+        mockMvc.perform(patch("/api/v1/tickets/{id}", ticketId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(ticketService).partialUpdateTicket(eq(ticketId), captor.capture());
+
+        TicketPatchRequest captured = captor.getValue();
+        assertThat(captured.getAssigneeId().isPresent()).isTrue();
+        assertThat(captured.getAssigneeId().get()).isNull();
+
         verifyNoMoreInteractions(ticketService);
     }
 

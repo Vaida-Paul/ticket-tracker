@@ -1,35 +1,29 @@
 package com.example.skeleton.integration.controller;
 
+import com.example.skeleton.controller.CommentController;
 import com.example.skeleton.exception.CommentNotFoundException;
 import com.example.skeleton.exception.TicketNotFoundException;
 import com.example.skeleton.service.CommentService;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.openapitools.model.*;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.flyway.enabled=false"
-})
-@AutoConfigureMockMvc
+@WebMvcTest(CommentController.class)
+@ActiveProfiles("test")
 class CommentControllerTest {
 
     @Autowired
@@ -37,6 +31,8 @@ class CommentControllerTest {
 
     @MockitoBean
     private CommentService commentService;
+
+    private static final Long DEFAULT_USER_ID = 1L;
 
 
     @Test
@@ -108,7 +104,8 @@ class CommentControllerTest {
         expectedResponse.setBody("New comment");
         expectedResponse.setTicketId(ticketId);
 
-        when(commentService.addComment(eq(ticketId), any(CommentCreateRequest.class), any()))
+        ArgumentCaptor<CommentCreateRequest> captor = ArgumentCaptor.forClass(CommentCreateRequest.class);
+        when(commentService.addComment(eq(ticketId), captor.capture(), eq(DEFAULT_USER_ID)))
                 .thenReturn(expectedResponse);
 
         mockMvc.perform(post("/api/v1/tickets/{ticketId}/comments", ticketId)
@@ -120,7 +117,11 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.body").value("New comment"))
                 .andExpect(jsonPath("$.ticketId").value(1));
 
-        verify(commentService).addComment(eq(ticketId), any(CommentCreateRequest.class), any());
+        verify(commentService).addComment(eq(ticketId), captor.capture(), eq(DEFAULT_USER_ID));
+
+        CommentCreateRequest captured = captor.getValue();
+        assertThat(captured.getBody()).isEqualTo("New comment");
+
         verifyNoMoreInteractions(commentService);
     }
 
@@ -168,7 +169,8 @@ class CommentControllerTest {
                 }
                 """;
 
-        when(commentService.addComment(eq(ticketId), any(CommentCreateRequest.class), any()))
+        ArgumentCaptor<CommentCreateRequest> captor = ArgumentCaptor.forClass(CommentCreateRequest.class);
+        when(commentService.addComment(eq(ticketId), captor.capture(), eq(DEFAULT_USER_ID)))
                 .thenThrow(new TicketNotFoundException(ticketId));
 
         mockMvc.perform(post("/api/v1/tickets/{ticketId}/comments", ticketId)
@@ -178,7 +180,11 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"));
 
-        verify(commentService).addComment(eq(ticketId), any(CommentCreateRequest.class), any());
+        verify(commentService).addComment(eq(ticketId), captor.capture(), eq(DEFAULT_USER_ID));
+
+        CommentCreateRequest captured = captor.getValue();
+        assertThat(captured.getBody()).isEqualTo("New comment");
+
         verifyNoMoreInteractions(commentService);
     }
 
@@ -186,7 +192,7 @@ class CommentControllerTest {
     void whenDeleteComment_thenReturns204() throws Exception {
         Long ticketId = 1L;
         Long commentId = 1L;
-        doNothing().when(commentService).deleteComment(ticketId,commentId);
+        doNothing().when(commentService).deleteComment(ticketId, commentId);
 
         mockMvc.perform(delete("/api/v1/tickets/{ticketId}/comments/{commentId}", ticketId, commentId))
                 .andExpect(status().isNoContent());
@@ -200,14 +206,14 @@ class CommentControllerTest {
         Long ticketId = 1L;
         Long commentId = 99999L;
         doThrow(new CommentNotFoundException(commentId))
-                .when(commentService).deleteComment(ticketId,commentId);
+                .when(commentService).deleteComment(ticketId, commentId);
 
         mockMvc.perform(delete("/api/v1/tickets/{ticketId}/comments/{commentId}", ticketId, commentId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Comment with id 99999 not found"));
 
-        verify(commentService).deleteComment(ticketId,commentId);
+        verify(commentService).deleteComment(ticketId, commentId);
         verifyNoMoreInteractions(commentService);
     }
 }

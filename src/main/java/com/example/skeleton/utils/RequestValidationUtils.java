@@ -5,6 +5,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.util.Map;
 import java.util.Set;
 
 public final class RequestValidationUtils {
@@ -12,16 +13,29 @@ public final class RequestValidationUtils {
     private RequestValidationUtils() {}
 
     public static Pageable buildPageable(
+        Integer page,
+        Integer size,
+        String sortBy,
+        String defaultSortBy,
+        String sortDirection,
+        Set<String> allowedSortFields
+    ) {
+        return buildPageable(page, size, sortBy, defaultSortBy, sortDirection, allowedSortFields, Map.of());
+    }
+
+    public static Pageable buildPageable(
             Integer page,
             Integer size,
             String sortBy,
             String defaultSortBy,
             String sortDirection,
-            Set<String> allowedSortFields
+            Set<String> allowedSortFields,
+            Map<String, String> sortAliases
     ) {
         String sortField = parseSortField(sortBy, defaultSortBy, allowedSortFields);
+        String actualField = sortAliases.getOrDefault(sortField, sortField);
         Sort.Direction direction = parseSortDirection(sortDirection);
-        return PageRequest.of(parsePage(page), parseSize(size), Sort.by(direction, sortField));
+        return PageRequest.of(parsePage(page), parseSize(size), Sort.by(direction, actualField));
     }
 
     public static Sort.Direction parseSortDirection(String value) {

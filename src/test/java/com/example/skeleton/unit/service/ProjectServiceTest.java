@@ -12,6 +12,7 @@ import com.example.skeleton.service.implementation.ProjectServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,14 +20,13 @@ import org.openapitools.model.ProjectCreateRequest;
 import org.openapitools.model.ProjectDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,13 +39,13 @@ class ProjectServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private TicketRepository ticketRepository;
+
+    @Mock
     private ProjectMapper projectMapper;
 
     @InjectMocks
     private ProjectServiceImpl projectService;
-
-    @Mock
-    private TicketRepository ticketRepository;
 
     private User user;
     private Project project;
@@ -74,13 +74,10 @@ class ProjectServiceTest {
 
     @Test
     void whenGetAllProjects_thenReturnsPageOfDtos() {
-        Page<Project> projectPage = new PageImpl<>(
-                List.of(project),
-                PageRequest.of(0, 10),
-                1
-        );
+        Page<Project> projectPage = new PageImpl<>(List.of(project));
 
-        when(projectRepository.findAll(any(Pageable.class))).thenReturn(projectPage);
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        when(projectRepository.findAll(pageableCaptor.capture())).thenReturn(projectPage);
         when(projectMapper.toDto(project)).thenReturn(projectDto);
 
         Page<ProjectDto> result = projectService.getAllProjects(0, 10, "createdAt", "desc");
@@ -90,34 +87,51 @@ class ProjectServiceTest {
         assertThat(result.getContent().get(0).getName()).isEqualTo("Test Project");
         assertThat(result.getTotalElements()).isEqualTo(1);
 
-        verify(projectRepository).findAll(any(Pageable.class));
+        verify(projectRepository).findAll(pageableCaptor.capture());
         verify(projectMapper).toDto(project);
 
+        Pageable capturedPageable = pageableCaptor.getValue();
+        assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
+        assertThat(capturedPageable.getPageSize()).isEqualTo(10);
+        Sort.Order order = capturedPageable.getSort().getOrderFor("createdAt");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
+
         verifyNoMoreInteractions(projectRepository, projectMapper);
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userRepository, ticketRepository);
     }
 
     @Test
     void whenGetAllProjectsEmpty_thenReturnsEmptyPage() {
         Page<Project> emptyPage = new PageImpl<>(List.of());
 
-        when(projectRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        when(projectRepository.findAll(pageableCaptor.capture())).thenReturn(emptyPage);
 
         Page<ProjectDto> result = projectService.getAllProjects(0, 10, "createdAt", "desc");
 
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
 
-        verify(projectRepository).findAll(any(Pageable.class));
+        verify(projectRepository).findAll(pageableCaptor.capture());
+
+        Pageable capturedPageable = pageableCaptor.getValue();
+        assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
+        assertThat(capturedPageable.getPageSize()).isEqualTo(10);
+        Sort.Order order = capturedPageable.getSort().getOrderFor("createdAt");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
+
         verifyNoMoreInteractions(projectRepository);
-        verifyNoInteractions(userRepository, projectMapper);
+        verifyNoInteractions(userRepository, projectMapper, ticketRepository);
     }
 
     @Test
     void whenGetAllProjectsWithDefaultParams_thenUsesDefaults() {
         Page<Project> projectPage = new PageImpl<>(List.of(project));
 
-        when(projectRepository.findAll(any(Pageable.class))).thenReturn(projectPage);
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        when(projectRepository.findAll(pageableCaptor.capture())).thenReturn(projectPage);
         when(projectMapper.toDto(project)).thenReturn(projectDto);
 
         Page<ProjectDto> result = projectService.getAllProjects(null, null, null, null);
@@ -125,11 +139,18 @@ class ProjectServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
 
-        verify(projectRepository).findAll(any(Pageable.class));
+        verify(projectRepository).findAll(pageableCaptor.capture());
         verify(projectMapper).toDto(project);
 
+        Pageable capturedPageable = pageableCaptor.getValue();
+        assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
+        assertThat(capturedPageable.getPageSize()).isEqualTo(20);
+        Sort.Order order = capturedPageable.getSort().getOrderFor("createdAt");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
+
         verifyNoMoreInteractions(projectRepository, projectMapper);
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userRepository, ticketRepository);
     }
 
     @Test
@@ -147,7 +168,7 @@ class ProjectServiceTest {
         verify(projectMapper).toDto(project);
 
         verifyNoMoreInteractions(projectRepository, projectMapper);
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userRepository, ticketRepository);
     }
 
     @Test
@@ -161,7 +182,7 @@ class ProjectServiceTest {
         verify(projectRepository).findById(99999L);
 
         verifyNoMoreInteractions(projectRepository);
-        verifyNoInteractions(userRepository, projectMapper);
+        verifyNoInteractions(userRepository, projectMapper, ticketRepository);
     }
 
     @Test
@@ -187,6 +208,7 @@ class ProjectServiceTest {
         verify(projectMapper).toDto(project);
 
         verifyNoMoreInteractions(userRepository, projectMapper, projectRepository);
+        verifyNoInteractions(ticketRepository);
     }
 
     @Test
@@ -204,20 +226,22 @@ class ProjectServiceTest {
         verify(userRepository).findById(99999L);
 
         verifyNoMoreInteractions(userRepository);
-        verifyNoInteractions(projectMapper, projectRepository);
+        verifyNoInteractions(projectMapper, projectRepository, ticketRepository);
     }
 
     @Test
     void whenDeleteProject_thenDeletesSuccessfully() {
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(ticketRepository.existsByProjectId(1L)).thenReturn(false);
         doNothing().when(projectRepository).delete(project);
 
         projectService.deleteProject(1L);
 
         verify(projectRepository).findById(1L);
+        verify(ticketRepository).existsByProjectId(1L);
         verify(projectRepository).delete(project);
 
-        verifyNoMoreInteractions(projectRepository);
+        verifyNoMoreInteractions(projectRepository, ticketRepository);
         verifyNoInteractions(userRepository, projectMapper);
     }
 
@@ -232,6 +256,6 @@ class ProjectServiceTest {
         verify(projectRepository).findById(99999L);
 
         verifyNoMoreInteractions(projectRepository);
-        verifyNoInteractions(userRepository, projectMapper);
+        verifyNoInteractions(userRepository, projectMapper, ticketRepository);
     }
 }

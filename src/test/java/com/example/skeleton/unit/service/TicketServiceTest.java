@@ -16,6 +16,7 @@ import com.example.skeleton.service.implementation.TicketServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -29,8 +30,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -371,11 +370,14 @@ class TicketServiceTest {
     @Test
     void whenSearchTicketsWithNoFilters_thenReturnsPage() {
         Page<Ticket> ticketPage = new PageImpl<>(List.of(ticket));
-        Page<TicketDto> expectedPage = new PageImpl<>(List.of(ticketDto));
 
         when(enumMapper.toDomainTicketStatus(null)).thenReturn(null);
         when(enumMapper.toDomainPriority(null)).thenReturn(null);
-        when(ticketRepository.findAll(any(Specification.class), any(Pageable.class)))
+
+        ArgumentCaptor<Specification<Ticket>> specCaptor = ArgumentCaptor.forClass(Specification.class);
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+
+        when(ticketRepository.findAll(specCaptor.capture(), pageableCaptor.capture()))
                 .thenReturn(ticketPage);
         when(ticketMapper.toDto(ticket)).thenReturn(ticketDto);
 
@@ -390,8 +392,17 @@ class TicketServiceTest {
 
         verify(enumMapper).toDomainTicketStatus(null);
         verify(enumMapper).toDomainPriority(null);
-        verify(ticketRepository).findAll(any(Specification.class), any(Pageable.class));
+        verify(ticketRepository).findAll(specCaptor.capture(), pageableCaptor.capture());
         verify(ticketMapper).toDto(ticket);
+
+        assertThat(specCaptor.getValue()).isNotNull();
+
+        Pageable capturedPageable = pageableCaptor.getValue();
+        assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
+        assertThat(capturedPageable.getPageSize()).isEqualTo(10);
+        Sort.Order order = capturedPageable.getSort().getOrderFor("createdAt");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
 
         verifyNoMoreInteractions(ticketRepository, enumMapper, ticketMapper);
         verifyNoInteractions(userRepository, projectRepository);
@@ -405,7 +416,11 @@ class TicketServiceTest {
                 .thenReturn(com.example.skeleton.domain.enums.TicketStatus.OPEN);
         when(enumMapper.toDomainPriority(Priority.HIGH))
                 .thenReturn(com.example.skeleton.domain.enums.Priority.HIGH);
-        when(ticketRepository.findAll(any(Specification.class), any(Pageable.class)))
+
+        ArgumentCaptor<Specification<Ticket>> specCaptor = ArgumentCaptor.forClass(Specification.class);
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+
+        when(ticketRepository.findAll(specCaptor.capture(), pageableCaptor.capture()))
                 .thenReturn(ticketPage);
         when(ticketMapper.toDto(ticket)).thenReturn(ticketDto);
 
@@ -420,8 +435,17 @@ class TicketServiceTest {
 
         verify(enumMapper).toDomainTicketStatus(TicketStatus.OPEN);
         verify(enumMapper).toDomainPriority(Priority.HIGH);
-        verify(ticketRepository).findAll(any(Specification.class), any(Pageable.class));
+        verify(ticketRepository).findAll(specCaptor.capture(), pageableCaptor.capture());
         verify(ticketMapper).toDto(ticket);
+
+        assertThat(specCaptor.getValue()).isNotNull();
+
+        Pageable capturedPageable = pageableCaptor.getValue();
+        assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
+        assertThat(capturedPageable.getPageSize()).isEqualTo(10);
+        Sort.Order order = capturedPageable.getSort().getOrderFor("createdAt");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
 
         verifyNoMoreInteractions(ticketRepository, enumMapper, ticketMapper);
         verifyNoInteractions(userRepository, projectRepository);
