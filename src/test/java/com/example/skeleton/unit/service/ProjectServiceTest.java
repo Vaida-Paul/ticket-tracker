@@ -72,6 +72,7 @@ class ProjectServiceTest {
         projectDto.setDescription("Description");
     }
 
+
     @Test
     void whenGetAllProjects_thenReturnsPageOfDtos() {
         Page<Project> projectPage = new PageImpl<>(List.of(project));
@@ -189,14 +190,13 @@ class ProjectServiceTest {
     void whenCreateProjectWithValidData_thenReturnsProjectDto() {
         ProjectCreateRequest request = new ProjectCreateRequest();
         request.setName("New Project");
-        request.setCreatedById(1L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(projectMapper.toEntity(request)).thenReturn(project);
         when(projectRepository.save(project)).thenReturn(project);
         when(projectMapper.toDto(project)).thenReturn(projectDto);
 
-        ProjectDto result = projectService.createProject(request);
+        ProjectDto result = projectService.createProject(request, 1L);
 
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Test Project");
@@ -215,11 +215,10 @@ class ProjectServiceTest {
     void whenCreateProjectWithNonExistentUser_thenThrowsException() {
         ProjectCreateRequest request = new ProjectCreateRequest();
         request.setName("New Project");
-        request.setCreatedById(99999L);
 
         when(userRepository.findById(99999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> projectService.createProject(request))
+        assertThatThrownBy(() -> projectService.createProject(request, 99999L))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessageContaining("99999");
 

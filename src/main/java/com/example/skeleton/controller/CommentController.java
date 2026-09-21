@@ -1,5 +1,6 @@
 package com.example.skeleton.controller;
 
+import com.example.skeleton.security.SecurityUtils;
 import com.example.skeleton.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,8 @@ import org.openapitools.model.CommentCreateRequest;
 import org.openapitools.model.CommentDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,9 +25,6 @@ public class CommentController implements CommentsApi {
 
     private final CommentService commentService;
 
-    // TODO: replace with authenticated user once security is implemented
-    private static final Long DEFAULT_USER_ID = 1L;
-
     @Override
     public ResponseEntity<List<CommentDto>> getTicketComments(Long ticketId) {
         return ResponseEntity.ok(commentService.getCommentsByTicketId(ticketId));
@@ -32,7 +32,8 @@ public class CommentController implements CommentsApi {
 
     @Override
     public ResponseEntity<CommentDto> addComment(Long ticketId, @Valid CommentCreateRequest request) {
-        CommentDto comment = commentService.addComment(ticketId, request, DEFAULT_USER_ID);
+        Long userId = SecurityUtils.getCurrentUserId();
+        CommentDto comment = commentService.addComment(ticketId, request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(comment);
     }
 

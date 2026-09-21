@@ -51,12 +51,11 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
-    public ProjectDto createProject(ProjectCreateRequest request) {
-        log.info("Creating project: name={}, createdById={}",
-                request.getName(), request.getCreatedById());
+    public ProjectDto createProject(ProjectCreateRequest request, Long currentUserId) {
+        log.info("Creating project: name={}, createdBy={}", request.getName(), currentUserId);
 
-        User createdBy = userRepository.findById(request.getCreatedById())
-                .orElseThrow(() -> new UserNotFoundException(request.getCreatedById()));
+        User createdBy = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new UserNotFoundException(currentUserId));
 
         Project project = projectMapper.toEntity(request);
         project.setCreatedBy(createdBy);

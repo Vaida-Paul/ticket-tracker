@@ -9,6 +9,8 @@ servers:
     description: Local development server
 
 tags:
+  - name: Auth
+    description: Authentication
   - name: Tickets
     description: Ticket management
   - name: Projects
@@ -452,6 +454,63 @@ paths:
             application/json:
               schema:
                 $ref: 'schemas.yaml#/ErrorResponse'
+  /auth/register:
+    post:
+      tags: [ Auth ]
+      summary: Register a new local account
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/RegisterRequest'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/UserDto'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+
+  /auth/login:
+    post:
+      tags: [ Auth ]
+      summary: Authenticate with email and password
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
 components:
   schemas:
     TicketSearchRequest:
@@ -460,6 +519,8 @@ components:
       $ref: 'schemas.yaml#/TicketStatus'
     Priority:
       $ref: 'schemas.yaml#/Priority'
+    Role:
+      $ref: 'schemas.yaml#/Role'
     UserDto:
       $ref: 'schemas.yaml#/UserDto'
     ProjectDto:
@@ -484,3 +545,11 @@ components:
       $ref: 'schemas.yaml#/PageResponseProjectDto'
     TicketPutRequest:
       $ref: 'schemas.yaml#/TicketPutRequest'
+    RegisterRequest:
+      $ref: 'schemas.yaml#/RegisterRequest'
+    LoginRequest:
+      $ref: 'schemas.yaml#/LoginRequest'
+    AuthResponse:
+      $ref: 'schemas.yaml#/AuthResponse'
+    RefreshRequest:
+      $ref: 'schemas.yaml#/RefreshRequest'

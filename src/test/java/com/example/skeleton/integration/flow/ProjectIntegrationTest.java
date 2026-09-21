@@ -7,12 +7,17 @@ import com.example.skeleton.domain.model.User;
 import com.example.skeleton.repository.ProjectRepository;
 import com.example.skeleton.repository.TicketRepository;
 import com.example.skeleton.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -77,15 +82,32 @@ class ProjectIntegrationTest {
                 .authProvider(AuthProvider.LOCAL)
                 .build();
         user = userRepository.save(user);
+
+        Jwt jwt = Jwt.withTokenValue("test-token")
+                .header("alg", "HS256")
+                .subject(user.getEmail())
+                .claim("userId", user.getId())
+                .claim("role", user.getRole().name())
+                .build();
+
+        JwtAuthenticationToken auth = new JwtAuthenticationToken(
+                jwt,
+                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
+                user.getEmail()
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
     @Test
     void fullFlow_createGetDeleteProject() throws Exception {
         String createBody = """
                 {
                     "name": "Integration Project",
-                    "description": "Created via integration test",
-                    "createdById": %d
+                    "description": "Created via integration test"
                 }
                 """.formatted(user.getId());
 
@@ -198,13 +220,27 @@ class ProjectIntegrationTest {
 
     @Test
     void errorFlow_createProjectWithNonExistentUser_thenReturns404() throws Exception {
+        // Setăm SecurityContext cu un userId care nu există în DB
+        Jwt jwt = Jwt.withTokenValue("test-token")
+                .header("alg", "HS256")
+                .subject("ghost@example.com")
+                .claim("userId", 99999L)
+                .claim("role", "PROJECT_MANAGER")
+                .build();
+
+        JwtAuthenticationToken auth = new JwtAuthenticationToken(
+                jwt,
+                List.of(new SimpleGrantedAuthority("ROLE_PROJECT_MANAGER")),
+                "ghost@example.com"
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
         String body = """
-                {
-                    "name": "Test Project",
-                    "description": "Test",
-                    "createdById": 99999
-                }
-                """;
+            {
+                "name": "Test Project",
+                "description": "Test"
+            }
+            """;
 
         mockMvc.perform(post("/api/v1/projects")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -253,25 +289,6 @@ class ProjectIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
                         org.hamcrest.Matchers.containsString("name")));
-
-        assertThat(projectRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    void errorFlow_createProjectWithMissingCreatedById_thenReturns400() throws Exception {
-        String body = """
-                {
-                    "name": "Test Project",
-                    "description": "Test"
-                }
-                """;
-
-        mockMvc.perform(post("/api/v1/projects")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value(
-                        org.hamcrest.Matchers.containsString("createdById")));
 
         assertThat(projectRepository.findAll()).isEmpty();
     }

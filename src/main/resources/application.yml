@@ -28,8 +28,29 @@ app:
     total-size-cap: ${LOG_TOTAL_SIZE_CAP:1GB}
     slow-threshold-ms: ${SLOW_THRESHOLD_MS:500}
 
+jwt:
+  secret: ${JWT_SECRET:50fdf95fdc9b99e425f76a0cfe5d8698fbe89f1fc24bc22d9b464cb698818c62}
+  access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000}
+  refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
+
+
 security:
-  permit-all-api: false
+  dev-mode: false
+  paths-to-skip:
+    - /api/auth/**
+    - /actuator/**
+    - /swagger-ui.html
+    - /swagger-ui/**
+    - /v3/api-docs/**
+  role-paths:
+    ADMIN:
+      - /api/**
+    PROJECT_MANAGER:
+      - /api/v1/projects/**
+      - /api/v1/tickets/**
+    MEMBER:
+      - /api/v1/tickets/**
+      - /api/v1/tickets/*/comments/**
 
 server:
   port: 8080

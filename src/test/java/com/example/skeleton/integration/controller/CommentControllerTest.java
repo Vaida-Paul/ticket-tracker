@@ -1,14 +1,23 @@
 package com.example.skeleton.integration.controller;
 
+import com.example.skeleton.config.SecurityProperties;
 import com.example.skeleton.controller.CommentController;
 import com.example.skeleton.exception.CommentNotFoundException;
 import com.example.skeleton.exception.TicketNotFoundException;
 import com.example.skeleton.service.CommentService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(CommentController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class CommentControllerTest {
 
@@ -32,7 +42,30 @@ class CommentControllerTest {
     @MockitoBean
     private CommentService commentService;
 
-    private static final Long DEFAULT_USER_ID = 1L;
+    @MockitoBean
+    private SecurityProperties securityProperties;
+
+    @BeforeEach
+    void setUp() {
+        Jwt jwt = Jwt.withTokenValue("test-token")
+                .header("alg", "HS256")
+                .subject("test@example.com")
+                .claim("userId", 1L)
+                .claim("role", "PROJECT_MANAGER")
+                .build();
+
+        JwtAuthenticationToken auth = new JwtAuthenticationToken(
+                jwt,
+                List.of(new SimpleGrantedAuthority("ROLE_PROJECT_MANAGER")),
+                "test@example.com"
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
 
     @Test
@@ -105,7 +138,7 @@ class CommentControllerTest {
         expectedResponse.setTicketId(ticketId);
 
         ArgumentCaptor<CommentCreateRequest> captor = ArgumentCaptor.forClass(CommentCreateRequest.class);
-        when(commentService.addComment(eq(ticketId), captor.capture(), eq(DEFAULT_USER_ID)))
+        when(commentService.addComment(eq(ticketId), captor.capture(), eq(1L)))
                 .thenReturn(expectedResponse);
 
         mockMvc.perform(post("/api/v1/tickets/{ticketId}/comments", ticketId)
@@ -117,7 +150,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.body").value("New comment"))
                 .andExpect(jsonPath("$.ticketId").value(1));
 
-        verify(commentService).addComment(eq(ticketId), captor.capture(), eq(DEFAULT_USER_ID));
+        verify(commentService).addComment(eq(ticketId), captor.capture(), eq(1L));
 
         CommentCreateRequest captured = captor.getValue();
         assertThat(captured.getBody()).isEqualTo("New comment");
@@ -170,7 +203,7 @@ class CommentControllerTest {
                 """;
 
         ArgumentCaptor<CommentCreateRequest> captor = ArgumentCaptor.forClass(CommentCreateRequest.class);
-        when(commentService.addComment(eq(ticketId), captor.capture(), eq(DEFAULT_USER_ID)))
+        when(commentService.addComment(eq(ticketId), captor.capture(), eq(1L)))
                 .thenThrow(new TicketNotFoundException(ticketId));
 
         mockMvc.perform(post("/api/v1/tickets/{ticketId}/comments", ticketId)
@@ -180,7 +213,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Ticket with id 99999 not found"));
 
-        verify(commentService).addComment(eq(ticketId), captor.capture(), eq(DEFAULT_USER_ID));
+        verify(commentService).addComment(eq(ticketId), captor.capture(), eq(1L));
 
         CommentCreateRequest captured = captor.getValue();
         assertThat(captured.getBody()).isEqualTo("New comment");

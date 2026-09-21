@@ -35,7 +35,7 @@ public interface ProjectService {
      * @return the created project DTO
      * @throws com.example.skeleton.exception.UserNotFoundException if the creator user does not exist
      */
-    ProjectDto createProject(ProjectCreateRequest request);
+    ProjectDto createProject(ProjectCreateRequest request, Long currentUserId);
 
     /**
      * Deletes a project by its ID.

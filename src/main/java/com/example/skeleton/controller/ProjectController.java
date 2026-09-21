@@ -1,5 +1,6 @@
 package com.example.skeleton.controller;
 
+import com.example.skeleton.security.SecurityUtils;
 import com.example.skeleton.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +49,8 @@ public class ProjectController implements ProjectsApi {
 
     @Override
     public ResponseEntity<ProjectDto> createProject(@Valid ProjectCreateRequest request) {
-        ProjectDto project = projectService.createProject(request);
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        ProjectDto project = projectService.createProject(request, currentUserId);
         return ResponseEntity.status(HttpStatus.CREATED).body(project);
     }
 

@@ -1,5 +1,8 @@
+app:
+  environment: prod
+
 security:
-  permit-all-api: false
+  dev-mode: false
 
 logging:
   level:

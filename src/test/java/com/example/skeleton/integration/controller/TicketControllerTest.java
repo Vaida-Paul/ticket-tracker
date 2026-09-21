@@ -1,9 +1,11 @@
 package com.example.skeleton.integration.controller;
 
+import com.example.skeleton.config.SecurityProperties;
 import com.example.skeleton.controller.TicketController;
 import com.example.skeleton.exception.ProjectNotFoundException;
 import com.example.skeleton.exception.TicketNotFoundException;
 import com.example.skeleton.service.TicketService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,13 @@ class TicketControllerTest {
     @MockitoBean
     private TicketService ticketService;
 
+    @MockitoBean
+    private SecurityProperties securityProperties;
+
+    @BeforeEach
+    void setUpSecurityProperties() {
+        when(securityProperties.isDevMode()).thenReturn(true);
+    }
 
     @Test
     void whenTicketExists_thenReturns200AndTicket() throws Exception {

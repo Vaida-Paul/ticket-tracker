@@ -12,11 +12,11 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+app:
+  environment: test
+
 security:
   dev-mode: true
-  permit-all-api: true
-  paths-to-skip:
-    - /**
 
 logging:
   level:

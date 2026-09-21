@@ -16,4 +16,10 @@ public interface EnumMapper {
 
     org.openapitools.model.Priority toOpenApiPriority(
             com.example.skeleton.domain.enums.Priority priority);
+
+    com.example.skeleton.domain.enums.Role toDomainRole(
+            org.openapitools.model.Role role);
+
+    org.openapitools.model.Role toOpenApiRole(
+            com.example.skeleton.domain.enums.Role role);
 }

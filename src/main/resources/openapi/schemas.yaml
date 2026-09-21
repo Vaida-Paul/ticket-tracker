@@ -24,6 +24,8 @@ UserDto:
       type: string
     fullName:
       type: string
+    role:
+      $ref: 'schemas.yaml#/Role'
   required:
     - id
     - email
@@ -58,10 +60,6 @@ ProjectCreateRequest:
     description:
       type: string
       x-field-extra-annotation: '@jakarta.validation.constraints.Size(max = 2000, message = "size must be at most 2000")'
-    createdById:
-      type: integer
-      format: int64
-      x-field-extra-annotation: '@jakarta.validation.constraints.NotNull(message = "must not be null") @jakarta.validation.constraints.Min(value = 1, message = "must be greater than or equal to 1")'
   required:
     - name
     - createdById
@@ -297,3 +295,55 @@ PageResponseProjectDto:
     - size
     - totalPages
     - totalElements
+
+RegisterRequest:
+  type: object
+  required: [email, password, fullName]
+  properties:
+    email:
+      type: string
+      format: email
+      x-field-extra-annotation: "@jakarta.validation.constraints.Email(message = \"must be a valid email\")"
+    password:
+      type: string
+      minLength: 8
+      maxLength: 100
+    fullName:
+      type: string
+      minLength: 1
+      maxLength: 255
+
+LoginRequest:
+  type: object
+  required: [email, password]
+  properties:
+    email:
+      type: string
+      format: email
+      x-field-extra-annotation: "@jakarta.validation.constraints.Email(message = \"must be a valid email\")"
+    password:
+      type: string
+
+AuthResponse:
+  type: object
+  required: [accessToken, refreshToken, expiresIn]
+  properties:
+    accessToken:
+      type: string
+    refreshToken:
+      type: string
+    expiresIn:
+      type: integer
+      format: int64
+      description: Access token lifetime in seconds
+
+RefreshRequest:
+  type: object
+  required: [refreshToken]
+  properties:
+    refreshToken:
+      type: string
+
+Role:
+  type: string
+  enum: [ ADMIN, PROJECT_MANAGER, MEMBER ]
