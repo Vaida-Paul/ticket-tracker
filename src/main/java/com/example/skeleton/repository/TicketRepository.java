@@ -23,4 +23,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long>, JpaSpecif
     List<Ticket> findByAssignee(User assignee);
 
     long countByAssigneeId(Long userId);
+
+    boolean existsByProjectId(Long projectId);
 }

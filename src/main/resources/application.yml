@@ -3,6 +3,8 @@ spring:
     url: jdbc:postgresql://localhost:5432/ticket_tracker
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  profiles:
+    active: dev
 
   jpa:
     hibernate:

@@ -23,6 +23,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -95,7 +96,7 @@ class TicketSpecificationBuilderTest {
                 .priority(Priority.HIGH)
                 .project(project)
                 .assignee(user1)
-                .dueDate(TODAY.plusDays(5).atStartOfDay())
+                .dueDate(TODAY.plusDays(5).atStartOfDay().atOffset(ZoneOffset.UTC))
                 .build();
         ticketRepository.save(ticket1);
 
@@ -105,7 +106,7 @@ class TicketSpecificationBuilderTest {
                 .priority(Priority.MEDIUM)
                 .project(project)
                 .assignee(user1)
-                .dueDate(TODAY.plusDays(10).atStartOfDay())
+                .dueDate(TODAY.plusDays(10).atStartOfDay().atOffset(ZoneOffset.UTC))
                 .build();
         ticketRepository.save(ticket2);
 
@@ -115,7 +116,7 @@ class TicketSpecificationBuilderTest {
                 .priority(Priority.LOW)
                 .project(project)
                 .assignee(user2)
-                .dueDate(TODAY.plusDays(15).atStartOfDay())
+                .dueDate(TODAY.plusDays(15).atStartOfDay().atOffset(ZoneOffset.UTC))
                 .build();
         ticketRepository.save(ticket3);
 
@@ -125,7 +126,7 @@ class TicketSpecificationBuilderTest {
                 .priority(Priority.URGENT)
                 .project(project)
                 .assignee(user2)
-                .dueDate(TODAY.minusDays(1).atStartOfDay())
+                .dueDate(TODAY.minusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC))
                 .build();
         ticketRepository.save(ticket4);
 
@@ -135,7 +136,7 @@ class TicketSpecificationBuilderTest {
                 .priority(Priority.URGENT)
                 .project(project)
                 .assignee(user1)
-                .dueDate(TODAY.plusDays(2).atStartOfDay())
+                .dueDate(TODAY.plusDays(2).atStartOfDay().atOffset(ZoneOffset.UTC))
                 .build();
         ticketRepository.save(ticket5);
     }

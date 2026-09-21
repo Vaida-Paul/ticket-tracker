@@ -14,32 +14,38 @@ public class TicketSpecificationBuilder {
     private final List<Specification<Ticket>> specifications = new ArrayList<>();
 
     public TicketSpecificationBuilder withStatus(TicketStatus status) {
-        specifications.add(TicketSpecifications.hasStatus(status));
+        Specification<Ticket> spec = TicketSpecifications.hasStatus(status);
+        if (spec != null) specifications.add(spec);
         return this;
     }
 
     public TicketSpecificationBuilder withPriority(Priority priority) {
-        specifications.add(TicketSpecifications.hasPriority(priority));
+        Specification<Ticket> spec = TicketSpecifications.hasPriority(priority);
+        if (spec != null) specifications.add(spec);
         return this;
     }
 
     public TicketSpecificationBuilder withAssignee(Long assigneeId) {
-        specifications.add(TicketSpecifications.hasAssignee(assigneeId));
+        Specification<Ticket> spec = TicketSpecifications.hasAssignee(assigneeId);
+        if (spec != null) specifications.add(spec);
         return this;
     }
 
     public TicketSpecificationBuilder withDueBefore(LocalDate date) {
-        specifications.add(TicketSpecifications.dueBefore(date));
+        Specification<Ticket> spec = TicketSpecifications.dueBefore(date);
+        if (spec != null) specifications.add(spec);
         return this;
     }
 
     public TicketSpecificationBuilder withDueAfter(LocalDate date) {
-        specifications.add(TicketSpecifications.dueAfter(date));
+        Specification<Ticket> spec = TicketSpecifications.dueAfter(date);
+        if (spec != null) specifications.add(spec);
         return this;
     }
 
     public TicketSpecificationBuilder withTitleContains(String text) {
-        specifications.add(TicketSpecifications.titleContains(text));
+        Specification<Ticket> spec = TicketSpecifications.titleContains(text);
+        if (spec != null) specifications.add(spec);
         return this;
     }
 

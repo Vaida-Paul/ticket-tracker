@@ -22,7 +22,7 @@
 		<jjwt.version>0.12.6</jjwt.version>
 		<openapi-generator.version>7.17.0</openapi-generator.version>
 		<springdoc-openapi.version>2.8.3</springdoc-openapi.version>
-		<jackson-databind-nullable.version>0.2.6</jackson-databind-nullable.version>
+		<jackson-databind-nullable.version>0.2.10</jackson-databind-nullable.version>
 		<testcontainers.version>1.21.4</testcontainers.version>
 		<docker-java.version>3.4.0</docker-java.version>
 	</properties>
@@ -40,7 +40,6 @@
 	</dependencyManagement>
 
 	<dependencies>
-		<!-- Spring Boot Starters -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
@@ -142,12 +141,16 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Testcontainers -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-testcontainers</artifactId>
@@ -164,7 +167,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Docker Java API - pentru compatibilitate Rancher Desktop -->
 		<dependency>
 			<groupId>com.github.docker-java</groupId>
 			<artifactId>docker-java-api</artifactId>
@@ -236,10 +238,13 @@
 							<configOptions>
 								<interfaceOnly>true</interfaceOnly>
 								<useSpringBoot3>true</useSpringBoot3>
+								<useJackson3>true</useJackson3>
 								<useSwaggerUI>false</useSwaggerUI>
 								<useBeanValidation>false</useBeanValidation>
+								<useValidAnnotation>false</useValidAnnotation>
 								<includeHttpRequestContext>false</includeHttpRequestContext>
 								<useTags>true</useTags>
+								<openApiNullable>true</openApiNullable>
 							</configOptions>
 						</configuration>
 					</execution>
