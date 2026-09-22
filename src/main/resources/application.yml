@@ -10,6 +10,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  config:
+    import: optional:file:.env[.properties]
 
 logging:
   config: classpath:logback-spring.xml
@@ -29,9 +31,9 @@ app:
     slow-threshold-ms: ${SLOW_THRESHOLD_MS:500}
 
 jwt:
-  secret: ${JWT_SECRET:50fdf95fdc9b99e425f76a0cfe5d8698fbe89f1fc24bc22d9b464cb698818c62}
-  access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000}
-  refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
+  secret: ${JWT_SECRET}
+  access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS}
+  refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS}
 
 
 security:

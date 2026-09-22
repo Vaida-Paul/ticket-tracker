@@ -68,7 +68,6 @@ public class RoleAuthorizationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
 
-
     }
 
     private boolean isSkippedPath(String path) {
