@@ -59,24 +59,6 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgument(
-            IllegalArgumentException ex,
-            HttpServletRequest request) {
-
-        log.warn("[BAD REQUEST] {} {} - {}",
-                request.getMethod(),
-                request.getRequestURI(),
-                ex.getMessage());
-
-        return buildErrorResponse(
-                ex.getMessage(),
-                HttpStatus.BAD_REQUEST,
-                "Bad Request",
-                request
-        );
-    }
-
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMalformedJson(
             HttpMessageNotReadableException ex,
