@@ -13,15 +13,22 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.Set;
+
 @Aspect
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class LoggingAspect {
 
+    private static final Set<String> SENSITIVE_PATH_PREFIXES = Set.of(
+            "/api/auth/login",
+            "/api/auth/register"
+    );
+
     private final ObjectMapper objectMapper;
 
-    @Around("execution(* com.example.skeleton.controller..*(..)) && @annotation(org.springframework.web.bind.annotation.RequestMapping)")
+    @Around("execution(* com.example.skeleton.controller..*(..))")
     public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
         HttpServletRequest request = ((ServletRequestAttributes)
                 RequestContextHolder.getRequestAttributes()).getRequest();
@@ -31,10 +38,17 @@ public class LoggingAspect {
         String controllerMethod = joinPoint.getSignature().getDeclaringType().getSimpleName()
                 + "." + joinPoint.getSignature().getName() + "(..)";
 
-        String requestBody = extractRequestBody(joinPoint.getArgs());
-        log.info("START HTTP {} {} | controller_method={}{}",
-                method, path, controllerMethod,
-                requestBody != null ? " | requestBody=" + requestBody : "");
+        log.info("START HTTP {} {} | controller_method={}", method, path, controllerMethod);
+
+        if (log.isDebugEnabled()) {
+            String requestBody = isSensitivePath(path)
+                    ? "[MASKED]"
+                    : extractRequestBody(joinPoint.getArgs());
+
+            if (requestBody != null) {
+                log.debug("REQUEST BODY {} {} | body={}", method, path, requestBody);
+            }
+        }
 
         long start = System.currentTimeMillis();
         Object result = joinPoint.proceed();
@@ -44,6 +58,10 @@ public class LoggingAspect {
         log.info("END HTTP {} {} | status={} | durationMs={}", method, path, status, duration);
 
         return result;
+    }
+
+    private boolean isSensitivePath(String path) {
+        return SENSITIVE_PATH_PREFIXES.stream().anyMatch(path::startsWith);
     }
 
     private String extractRequestBody(Object[] args) {
