@@ -19,12 +19,14 @@ public final class SecurityUtils {
 
     public static Long getCurrentUserId() {
         Jwt jwt = getCurrentJwt();
-        return jwt == null ? null : jwt.getClaim("userId");
+        if (jwt == null) return null;
+        String sub = jwt.getSubject();
+        return sub == null ? null : Long.valueOf(sub);
     }
 
     public static String getCurrentUserEmail() {
         Jwt jwt = getCurrentJwt();
-        return jwt == null ? null : jwt.getSubject();
+        return jwt == null ? null : jwt.getClaim("email");
     }
 
     public static String getCurrentUserRole() {
