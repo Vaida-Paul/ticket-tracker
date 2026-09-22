@@ -9,6 +9,7 @@ import com.example.skeleton.exception.InvalidCredentialsException;
 import com.example.skeleton.mapper.UserMapper;
 import com.example.skeleton.repository.RefreshTokenRepository;
 import com.example.skeleton.repository.UserRepository;
+import com.example.skeleton.security.JwtService;
 import com.example.skeleton.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,11 +36,8 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtEncoder jwtEncoder;
+    private final JwtService jwtService;
     private final UserMapper userMapper;
-
-    @Value("${jwt.access-token-expiration-ms}")
-    private long accessTokenExpirationMs;
 
     @Value("${jwt.refresh-token-expiration-ms}")
     private long refreshTokenExpirationMs;
@@ -79,26 +77,13 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException();
         }
 
-        String accessToken = generateAccessToken(user);
+        String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = createRefreshToken(user);
 
         log.info("Login successful for user id={}", user.getId());
-        return new AuthResponse(accessToken, refreshToken, accessTokenExpirationMs / 1000);
+        return new AuthResponse(accessToken, refreshToken, jwtService.getAccessTokenExpirationSeconds());
     }
 
-    private String generateAccessToken(User user) {
-        Instant now = Instant.now();
-        JwtClaimsSet claims = JwtClaimsSet.builder()
-                .subject(user.getEmail())
-                .claim("userId", user.getId())
-                .claim("role", user.getRole().name())
-                .issuedAt(now)
-                .expiresAt(now.plusMillis(accessTokenExpirationMs))
-                .build();
-
-        JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
-        return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
-    }
 
     private String createRefreshToken(User user) {
         RefreshToken token = RefreshToken.builder()

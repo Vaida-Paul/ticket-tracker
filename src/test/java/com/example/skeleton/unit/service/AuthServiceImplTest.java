@@ -9,6 +9,7 @@ import com.example.skeleton.exception.InvalidCredentialsException;
 import com.example.skeleton.mapper.UserMapper;
 import com.example.skeleton.repository.RefreshTokenRepository;
 import com.example.skeleton.repository.UserRepository;
+import com.example.skeleton.security.JwtService;
 import com.example.skeleton.service.implementation.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,7 @@ public class AuthServiceImplTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private JwtEncoder jwtEncoder;
+    private JwtService jwtService;
 
     @Mock
     private UserMapper userMapper;
@@ -62,7 +63,6 @@ public class AuthServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(authService, "accessTokenExpirationMs", 900000L);
         ReflectionTestUtils.setField(authService, "refreshTokenExpirationMs", 604800000L);
 
         user = User.builder()
@@ -108,7 +108,7 @@ public class AuthServiceImplTest {
         verify(userRepository).existsByEmail("new@example.com");
         verify(passwordEncoder).encode("password123");
         verify(userMapper).toDto(user);
-        verifyNoInteractions(refreshTokenRepository, jwtEncoder);
+        verifyNoInteractions(refreshTokenRepository, jwtService);
     }
 
     @Test
@@ -126,7 +126,7 @@ public class AuthServiceImplTest {
 
         verify(userRepository).existsByEmail("existing@example.com");
         verify(userRepository, never()).save(any());
-        verifyNoInteractions(passwordEncoder, userMapper, refreshTokenRepository, jwtEncoder);
+        verifyNoInteractions(passwordEncoder, userMapper, refreshTokenRepository, jwtService);
     }
 
 
@@ -138,8 +138,8 @@ public class AuthServiceImplTest {
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password123", "$2a$10$hashedpassword")).thenReturn(true);
-        when(jwtEncoder.encode(any(JwtEncoderParameters.class)))
-                .thenReturn(mockJwt("access-token-value"));
+        when(jwtService.generateAccessToken(user)).thenReturn("access-token-value");
+        when(jwtService.getAccessTokenExpirationSeconds()).thenReturn(900L);
         when(refreshTokenRepository.save(any(RefreshToken.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -168,7 +168,7 @@ public class AuthServiceImplTest {
                 .hasMessageContaining("Invalid email or password");
 
         verify(userRepository).findByEmail("ghost@example.com");
-        verifyNoInteractions(passwordEncoder, jwtEncoder, refreshTokenRepository);
+        verifyNoInteractions(passwordEncoder, jwtService, refreshTokenRepository);
     }
 
     @Test
@@ -185,7 +185,7 @@ public class AuthServiceImplTest {
 
         verify(userRepository).findByEmail("test@example.com");
         verify(passwordEncoder).matches("wrongpassword", "$2a$10$hashedpassword");
-        verifyNoInteractions(jwtEncoder, refreshTokenRepository);
+        verifyNoInteractions(jwtService, refreshTokenRepository);
     }
 
     @Test
@@ -202,7 +202,7 @@ public class AuthServiceImplTest {
                 .isInstanceOf(InvalidCredentialsException.class);
 
         verify(userRepository).findByEmail("test@example.com");
-        verifyNoInteractions(passwordEncoder, jwtEncoder, refreshTokenRepository);
+        verifyNoInteractions(passwordEncoder, jwtService, refreshTokenRepository);
     }
 
     private Jwt mockJwt(String tokenValue) {
