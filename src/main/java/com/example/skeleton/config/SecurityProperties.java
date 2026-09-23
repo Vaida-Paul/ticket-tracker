@@ -15,6 +15,7 @@ import java.util.Map;
 public class SecurityProperties {
 
     private List<String> pathsToSkip = List.of();
+    private List<String> authenticatedPaths = List.of();
     private Map<String, List<String>> rolePaths = Map.of();
     private boolean devMode = false;
 }

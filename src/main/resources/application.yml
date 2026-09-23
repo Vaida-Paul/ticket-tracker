@@ -39,11 +39,16 @@ jwt:
 security:
   dev-mode: false
   paths-to-skip:
-    - /api/auth/**
+    - /api/auth/register
+    - /api/auth/login
+    - /api/auth/refresh
+    - /api/auth/logout
     - /actuator/**
     - /swagger-ui.html
     - /swagger-ui/**
     - /v3/api-docs/**
+  authenticated-paths:
+    - /api/auth/logout-all
   role-paths:
     ADMIN:
       - /api/**

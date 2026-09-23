@@ -511,6 +511,57 @@ paths:
               schema:
                 $ref: 'schemas.yaml#/ErrorResponse'
 
+  /auth/refresh:
+    post:
+      tags: [ Auth ]
+      summary: Exchange refresh token for a new pair
+      operationId: refresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/RefreshRequest'
+      responses:
+        '200':
+          description: New token pair
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/AuthResponse'
+        '401':
+          description: Invalid, expired, or revoked refresh token
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [ Auth ]
+      summary: Revoke a specific refresh token
+      operationId: logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/LogoutRequest'
+      responses:
+        '204':
+          description: Refresh token revoked
+
+  /auth/logout-all:
+    post:
+      tags: [ Auth ]
+      summary: Revoke all refresh tokens for the current user
+      operationId: logoutAll
+      responses:
+        '204':
+          description: All refresh tokens revoked
+        '401':
+          description: Not authenticated
+
 components:
   schemas:
     TicketSearchRequest:
@@ -549,6 +600,8 @@ components:
       $ref: 'schemas.yaml#/RegisterRequest'
     LoginRequest:
       $ref: 'schemas.yaml#/LoginRequest'
+    LogoutRequest:
+      $ref: 'schemas.yaml#/LogoutRequest'
     AuthResponse:
       $ref: 'schemas.yaml#/AuthResponse'
     RefreshRequest:

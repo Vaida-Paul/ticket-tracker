@@ -2,31 +2,22 @@ package com.example.skeleton.service.implementation;
 
 import com.example.skeleton.domain.enums.AuthProvider;
 import com.example.skeleton.domain.enums.Role;
-import com.example.skeleton.domain.model.RefreshToken;
 import com.example.skeleton.domain.model.User;
 import com.example.skeleton.exception.EmailAlreadyExistsException;
 import com.example.skeleton.exception.InvalidCredentialsException;
+import com.example.skeleton.exception.InvalidRequestException;
 import com.example.skeleton.mapper.UserMapper;
-import com.example.skeleton.repository.RefreshTokenRepository;
 import com.example.skeleton.repository.UserRepository;
 import com.example.skeleton.security.JwtService;
+import com.example.skeleton.security.RefreshTokenService;
+import com.example.skeleton.security.SecurityUtils;
 import com.example.skeleton.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.openapitools.model.AuthResponse;
-import org.openapitools.model.LoginRequest;
-import org.openapitools.model.RegisterRequest;
-import org.openapitools.model.UserDto;
-import org.springframework.beans.factory.annotation.Value;
+import org.openapitools.model.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -34,13 +25,10 @@ import java.util.UUID;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
     private final UserMapper userMapper;
-
-    @Value("${jwt.refresh-token-expiration-ms}")
-    private long refreshTokenExpirationMs;
 
     @Override
     @Transactional
@@ -78,21 +66,46 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String accessToken = jwtService.generateAccessToken(user);
-        String refreshToken = createRefreshToken(user);
+        String refreshToken = refreshTokenService.issue(user);
 
         log.info("Login successful for user id={}", user.getId());
         return new AuthResponse(accessToken, refreshToken, jwtService.getAccessTokenExpirationSeconds());
     }
 
+    @Override
+    @Transactional
+    public AuthResponse refresh(RefreshRequest request) {
+        log.info("Refresh token exchange requested");
 
-    private String createRefreshToken(User user) {
-        RefreshToken token = RefreshToken.builder()
-                .token(UUID.randomUUID().toString())
-                .user(user)
-                .expiresAt(OffsetDateTime.now().plusSeconds(refreshTokenExpirationMs / 1000))
-                .revoked(false)
-                .createdAt(OffsetDateTime.now())
-                .build();
-        return refreshTokenRepository.save(token).getToken();
+        var result = refreshTokenService.rotate(request.getRefreshToken());
+        User user = result.user();
+
+        String newAccessToken = jwtService.generateAccessToken(user);
+        String newRefreshToken = result.newRawToken();
+
+        log.info("Refresh successful for user id={}", user.getId());
+        return new AuthResponse(newAccessToken, newRefreshToken, jwtService.getAccessTokenExpirationSeconds());
+    }
+
+    @Override
+    @Transactional
+    public void logout(LogoutRequest request) {
+        log.info("Logout requested");
+        refreshTokenService.revoke(request.getRefreshToken());
+    }
+
+    @Override
+    @Transactional
+    public void logoutAll() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            throw new InvalidRequestException("Not authenticated");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidRequestException("User not found"));
+
+        refreshTokenService.revokeAllForUser(user);
+        log.info("Logout-all for user id={}", userId);
     }
 }

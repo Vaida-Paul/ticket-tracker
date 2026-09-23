@@ -347,6 +347,13 @@ RefreshRequest:
     refreshToken:
       type: string
 
+LogoutRequest:
+  type: object
+  required: [refreshToken]
+  properties:
+    refreshToken:
+      type: string
+
 Role:
   type: string
   enum: [ ADMIN, PROJECT_MANAGER, MEMBER ]

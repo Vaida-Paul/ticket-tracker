@@ -205,6 +205,18 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRefreshToken(
+            InvalidRefreshTokenException ex, HttpServletRequest request) {
+        log.warn("[INVALID TOKEN] {} {} - {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return buildErrorResponse(
+                ex.getMessage(),
+                HttpStatus.UNAUTHORIZED,
+                "Unauthorized",
+                request
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex,
