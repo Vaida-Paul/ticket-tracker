@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.time.LocalDate;
 
@@ -67,11 +68,13 @@ public class TicketController implements TicketsApi {
     }
 
     @Override
+    @PreAuthorize("@ticketSecurity.isAssigneeOrManagerOrAdmin(#ticketId, authentication)")
     public ResponseEntity<TicketDto> patchTicket(Long ticketId, @Valid TicketPatchRequest request) {
         return ResponseEntity.ok(ticketService.partialUpdateTicket(ticketId, request));
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     public ResponseEntity<Void> deleteTicket(Long ticketId) {
         ticketService.deleteTicket(ticketId);
         return ResponseEntity.noContent().build();

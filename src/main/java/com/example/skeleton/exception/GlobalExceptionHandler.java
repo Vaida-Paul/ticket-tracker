@@ -11,6 +11,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
@@ -201,6 +202,18 @@ public class GlobalExceptionHandler {
                 "Method " + request.getMethod() + " is not supported for this endpoint",
                 HttpStatus.METHOD_NOT_ALLOWED,
                 "Method Not Allowed",
+                request
+        );
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex, HttpServletRequest request) {
+        log.warn("[ACCESS DENIED] {} {} - {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return buildErrorResponse(
+                "Access denied",
+                HttpStatus.FORBIDDEN,
+                "Forbidden",
                 request
         );
     }
