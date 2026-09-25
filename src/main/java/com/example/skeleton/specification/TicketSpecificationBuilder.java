@@ -6,6 +6,7 @@ import com.example.skeleton.domain.model.Ticket;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,13 +44,28 @@ public class TicketSpecificationBuilder {
         return this;
     }
 
+    public TicketSpecificationBuilder withStatusNotIn(
+            List<com.example.skeleton.domain.enums.TicketStatus> statuses) {
+        if (statuses != null && !statuses.isEmpty()) {
+            specifications.add((root, query, cb) -> root.get("status").in(statuses).not());
+        }
+        return this;
+    }
+
+    public TicketSpecificationBuilder withDueBeforeOrEqual(OffsetDateTime cutoff) {
+        if (cutoff != null) {
+            specifications.add((root, query, cb) ->
+                    cb.lessThanOrEqualTo(root.get("dueDate"), cutoff));
+        }
+        return this;
+    }
+
     public TicketSpecificationBuilder withTitleContains(String text) {
         Specification<Ticket> spec = TicketSpecifications.titleContains(text);
         if (spec != null) specifications.add(spec);
         return this;
     }
-
-    public Specification<Ticket> build() {
+        public Specification<Ticket> build() {
         return Specification.allOf(specifications);
     }
 

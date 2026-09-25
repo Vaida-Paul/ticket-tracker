@@ -12,6 +12,15 @@ spring:
       ddl-auto: validate
   config:
     import: optional:file:.env[.properties]
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
 
 logging:
   config: classpath:logback-spring.xml
@@ -29,6 +38,11 @@ app:
     max-history: ${LOG_MAX_HISTORY:30}
     total-size-cap: ${LOG_TOTAL_SIZE_CAP:1GB}
     slow-threshold-ms: ${SLOW_THRESHOLD_MS:500}
+  digest:
+    cron: ${DIGEST_CRON}
+    enabled: ${DIGEST_ENABLED:true}
+    from: ${DIGEST_FROM}
+    subject: "Your daily ticket digest"
 
 jwt:
   secret: ${JWT_SECRET}
@@ -61,3 +75,27 @@ security:
 
 server:
   port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    version: 1.0.0
+    description: Ticket Tracker API
+    java-version: ${java.version}
+  build:
+    artifact: "@project.artifactId@"
+    group: "@project.groupId@"
+    name: "@project.name@"
+    version: "@project.version@"
