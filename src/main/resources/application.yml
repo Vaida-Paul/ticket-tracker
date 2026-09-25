@@ -2,7 +2,7 @@ spring:
   application:
     name: ticket-tracker
   datasource:
-    url: jdbc:postgresql://localhost:5432/ticket_tracker
+    url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   profiles:
@@ -39,10 +39,12 @@ app:
     total-size-cap: ${LOG_TOTAL_SIZE_CAP:1GB}
     slow-threshold-ms: ${SLOW_THRESHOLD_MS:500}
   digest:
-    cron: ${DIGEST_CRON}
+    cron: ${DIGEST_CRON:0 0 8 * * *}
     enabled: ${DIGEST_ENABLED:true}
-    from: ${DIGEST_FROM}
+    from: ${DIGEST_FROM:noreply@ticket-tracker.local}
     subject: "Your daily ticket digest"
+  refresh-token:
+    cleanup-cron: ${REFRESH_TOKEN_CLEANUP_CRON:0 0 3 * * *}
 
 jwt:
   secret: ${JWT_SECRET}
