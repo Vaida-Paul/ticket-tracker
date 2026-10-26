@@ -1,0 +1,25 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  environment: test
+
+security:
+  dev-mode: true
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.springframework.test: DEBUG
+    com.example.skeleton: DEBUG

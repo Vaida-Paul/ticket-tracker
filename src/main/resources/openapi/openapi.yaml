@@ -1,0 +1,608 @@
+openapi: 3.0.3
+info:
+  title: Ticket Tracker API
+  description: API for managing tickets, projects and comments
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+
+tags:
+  - name: Auth
+    description: Authentication
+  - name: Tickets
+    description: Ticket management
+  - name: Projects
+    description: Project management
+  - name: Comments
+    description: Comment management
+
+paths:
+  /tickets:
+    get:
+      tags:
+        - Tickets
+      summary: Get all tickets with filtering and pagination
+      operationId: getTickets
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: 'schemas.yaml#/TicketStatus'
+        - name: priority
+          in: query
+          schema:
+            $ref: 'schemas.yaml#/Priority'
+        - name: assigneeId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: dueBefore
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dueAfter
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: titleContains
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            default: priority
+            enum: [ createdAt, dueDate, priority, title ]
+          description: 'Field to sort by. Supported values: createdAt, dueDate, priority, title'
+        - name: sortDirection
+          in: query
+          required: false
+          schema:
+            type: string
+            default: desc
+            enum: [ asc, desc ]
+          description: 'Sort direction: asc or desc'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/PageResponseTicketDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+    post:
+      tags:
+        - Tickets
+      summary: Create a new ticket
+      operationId: createTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/TicketCreateRequest'
+      responses:
+        '201':
+          description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/TicketDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+  /tickets/{ticketId}:
+    get:
+      tags:
+        - Tickets
+      summary: Get ticket by ID
+      operationId: getTicketById
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/TicketDto'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+    put:
+      tags:
+        - Tickets
+      summary: Full update ticket (PUT)
+      operationId: updateTicket
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/TicketPutRequest'
+      responses:
+        '200':
+          description: Ticket updated
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/TicketDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+    delete:
+      tags:
+        - Tickets
+      summary: Delete ticket
+      operationId: deleteTicket
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Ticket deleted
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+    patch:
+      tags:
+        - Tickets
+      summary: Partial update ticket
+      operationId: patchTicket
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/TicketPatchRequest'
+      responses:
+        '200':
+          description: Ticket updated
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/TicketDto'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+  /projects:
+    get:
+      tags:
+        - Projects
+      summary: Get all projects with pagination and sorting
+      operationId: getProjects
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            default: createdAt
+            enum: [ createdAt,updatedAt, name ]
+          description: 'Field to sort by. Supported values: createdAt, name'
+        - name: sortDirection
+          in: query
+          required: false
+          schema:
+            type: string
+            default: desc
+            enum: [ asc, desc ]
+          description: 'Sort direction: asc or desc'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/PageResponseProjectDto'
+
+    post:
+      tags:
+        - Projects
+      summary: Create a new project
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/ProjectCreateRequest'
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ProjectDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+  /projects/{projectId}:
+    get:
+      tags:
+        - Projects
+      summary: Get project by ID
+      operationId: getProjectById
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ProjectDto'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+    delete:
+      tags:
+        - Projects
+      summary: Delete project
+      operationId: deleteProject
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Project deleted
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+  /tickets/{ticketId}/comments:
+    get:
+      tags:
+        - Comments
+      summary: Get all comments for a ticket
+      operationId: getTicketComments
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: 'schemas.yaml#/CommentDto'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+    post:
+      tags:
+        - Comments
+      summary: Add a comment to a ticket
+      operationId: addComment
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/CommentCreateRequest'
+      responses:
+        '201':
+          description: Comment added
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/CommentDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+  /tickets/{ticketId}/comments/{commentId}:
+    delete:
+      tags:
+        - Comments
+      summary: Delete a comment
+      operationId: deleteComment
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Comment deleted
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+  /auth/register:
+    post:
+      tags: [ Auth ]
+      summary: Register a new local account
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/RegisterRequest'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/UserDto'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+
+  /auth/login:
+    post:
+      tags: [ Auth ]
+      summary: Authenticate with email and password
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags: [ Auth ]
+      summary: Exchange refresh token for a new pair
+      operationId: refresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/RefreshRequest'
+      responses:
+        '200':
+          description: New token pair
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/AuthResponse'
+        '401':
+          description: Invalid, expired, or revoked refresh token
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas.yaml#/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [ Auth ]
+      summary: Revoke a specific refresh token
+      operationId: logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas.yaml#/LogoutRequest'
+      responses:
+        '204':
+          description: Refresh token revoked
+
+  /auth/logout-all:
+    post:
+      tags: [ Auth ]
+      summary: Revoke all refresh tokens for the current user
+      operationId: logoutAll
+      responses:
+        '204':
+          description: All refresh tokens revoked
+        '401':
+          description: Not authenticated
+
+components:
+  schemas:
+    TicketSearchRequest:
+      $ref: 'schemas.yaml#/TicketSearchRequest'
+    TicketStatus:
+      $ref: 'schemas.yaml#/TicketStatus'
+    Priority:
+      $ref: 'schemas.yaml#/Priority'
+    Role:
+      $ref: 'schemas.yaml#/Role'
+    UserDto:
+      $ref: 'schemas.yaml#/UserDto'
+    ProjectDto:
+      $ref: 'schemas.yaml#/ProjectDto'
+    ProjectCreateRequest:
+      $ref: 'schemas.yaml#/ProjectCreateRequest'
+    TicketDto:
+      $ref: 'schemas.yaml#/TicketDto'
+    TicketCreateRequest:
+      $ref: 'schemas.yaml#/TicketCreateRequest'
+    TicketUpdateRequest:
+      $ref: 'schemas.yaml#/TicketPatchRequest'
+    CommentDto:
+      $ref: 'schemas.yaml#/CommentDto'
+    CommentCreateRequest:
+      $ref: 'schemas.yaml#/CommentCreateRequest'
+    PageResponseTicketDto:
+      $ref: 'schemas.yaml#/PageResponseTicketDto'
+    ErrorResponse:
+      $ref: 'schemas.yaml#/ErrorResponse'
+    PageResponseProjectDto:
+      $ref: 'schemas.yaml#/PageResponseProjectDto'
+    TicketPutRequest:
+      $ref: 'schemas.yaml#/TicketPutRequest'
+    RegisterRequest:
+      $ref: 'schemas.yaml#/RegisterRequest'
+    LoginRequest:
+      $ref: 'schemas.yaml#/LoginRequest'
+    LogoutRequest:
+      $ref: 'schemas.yaml#/LogoutRequest'
+    AuthResponse:
+      $ref: 'schemas.yaml#/AuthResponse'
+    RefreshRequest:
+      $ref: 'schemas.yaml#/RefreshRequest'

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="ticket-tracker"/>
+    <springProperty scope="context" name="ENVIRONMENT" source="app.environment" defaultValue="local"/>
+
+    <springProperty scope="context" name="LOG_PATH" source="app.logging.file-path" defaultValue="logs"/>
+    <springProperty scope="context" name="LOG_FILE_NAME" source="app.logging.file-name" defaultValue="ticket-tracker"/>
+    <springProperty scope="context" name="LOG_ARCHIVE_PATH" source="app.logging.archive-path" defaultValue="logs/archive"/>
+    <springProperty scope="context" name="MAX_FILE_SIZE" source="app.logging.max-file-size" defaultValue="100MB"/>
+    <springProperty scope="context" name="MAX_HISTORY" source="app.logging.max-history" defaultValue="30"/>
+    <springProperty scope="context" name="TOTAL_SIZE_CAP" source="app.logging.total-size-cap" defaultValue="1GB"/>
+
+    <property name="JSON_PATTERN" value='{"timestamp":"%d{yyyy-MM-dd&apos;T&apos;HH:mm:ss.SSSXXX}","environment":"${ENVIRONMENT}","appName":"${APP_NAME}","traceId":"%X{traceId:-}","level":"%level","logger":"%logger{36}","message":"%msg"}%n'/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${JSON_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${LOG_FILE_NAME}.log</file>
+        <encoder>
+            <pattern>${JSON_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_ARCHIVE_PATH}/%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+            <cleanHistoryOnStart>false</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.springframework.security" level="INFO"/>
+    <logger name="org.hibernate.SQL" level="DEBUG"/>
+    <logger name="org.flywaydb" level="INFO"/>
+    <logger name="com.example.skeleton" level="DEBUG"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>

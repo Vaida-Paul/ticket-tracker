@@ -1,0 +1,10 @@
+app:
+  enviroment: dev
+
+security:
+  dev-mode: true
+
+logging:
+  level:
+    com.example.skeleton: DEBUG
+    org.hibernate.SQL: DEBUG

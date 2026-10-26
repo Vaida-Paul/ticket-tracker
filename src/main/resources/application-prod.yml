@@ -1,0 +1,10 @@
+app:
+  environment: prod
+
+security:
+  dev-mode: false
+
+logging:
+  level:
+    com.example.skeleton: INFO
+    org.hibernate.SQL: WARN

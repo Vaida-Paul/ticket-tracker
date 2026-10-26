@@ -1,0 +1,106 @@
+spring:
+  application:
+    name: ticket-tracker
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  profiles:
+    active: dev
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  config:
+    import: optional:file:.env[.properties]
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    com.example.skeleton: INFO
+    org.hibernate.SQL: WARN
+
+app:
+  environment: ${SPRING_PROFILES_ACTIVE:local}
+  logging:
+    file-path: ${LOG_PATH:logs}
+    file-name: ${LOG_FILE_NAME:ticket-tracker}
+    archive-path: ${LOG_ARCHIVE_PATH:logs/archive}
+    max-file-size: ${LOG_MAX_FILE_SIZE:100MB}
+    max-history: ${LOG_MAX_HISTORY:30}
+    total-size-cap: ${LOG_TOTAL_SIZE_CAP:1GB}
+    slow-threshold-ms: ${SLOW_THRESHOLD_MS:500}
+  digest:
+    cron: ${DIGEST_CRON:0 0 8 * * *}
+    enabled: ${DIGEST_ENABLED:true}
+    from: ${DIGEST_FROM:noreply@ticket-tracker.local}
+    subject: "Your daily ticket digest"
+  refresh-token:
+    cleanup-cron: ${REFRESH_TOKEN_CLEANUP_CRON:0 0 3 * * *}
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS}
+  refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS}
+
+
+security:
+  dev-mode: false
+  paths-to-skip:
+    - /api/auth/register
+    - /api/auth/login
+    - /api/auth/refresh
+    - /api/auth/logout
+    - /actuator/**
+    - /swagger-ui.html
+    - /swagger-ui/**
+    - /v3/api-docs/**
+  authenticated-paths:
+    - /api/auth/logout-all
+  role-paths:
+    ADMIN:
+      - /api/**
+    PROJECT_MANAGER:
+      - /api/v1/projects/**
+      - /api/v1/tickets/**
+    MEMBER:
+      - /api/v1/tickets/**
+      - /api/v1/tickets/*/comments/**
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    version: 1.0.0
+    description: Ticket Tracker API
+    java-version: ${java.version}
+  build:
+    artifact: "@project.artifactId@"
+    group: "@project.groupId@"
+    name: "@project.name@"
+    version: "@project.version@"
